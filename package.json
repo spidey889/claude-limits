@@ -1,0 +1,8 @@
+{
+  "name": "claude-limits",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local Windows CLI for usage values actually exposed by Claude",
+  "engines": { "node": ">=22.13" },
+  "scripts": { "test": "node --test test/*.test.cjs" }
+}
