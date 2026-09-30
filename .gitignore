@@ -1,3 +1,4 @@
 .runtime-key
 .usage-snapshot.json
 node_modules/
+.test-*/

@@ -1,13 +1,33 @@
 # Current behavior
 
-`claudeli` connects to a hidden Node helper over a token-authenticated Windows named pipe. On first connection the helper receives the Desktop session over its stdin, while Desktop is quit because Chromium locks its Cookies database. The session is unlocked with current-user Windows DPAPI and AES-GCM. No login credentials are persisted or printed. Desktop can reopen while the helper holds the session in memory.
+This repository contains two independent providers. Root Node modules and `test/` belong to Claude; `codex/` contains the complete offline PowerShell tool and its checks. Credentials, quota values, and fallback behavior are never shared between providers.
 
-Each reading first requests Claude's organization usage endpoint. If any overall account window is exposed, REST values are displayed directly. If both windows are missing, one temporary dot-message probe obtains the real `message_limit` SSE event. REST utilization is a percentage; SSE utilization is a fraction. Missing weekly data remains unavailable. Unknown values never become zero, and a passed reset time never silently clears usage.
+## Installation and verification
 
-Probe completions are never automatically retried. Each probe uses a new temporary conversation, confirms temporary mode before sending, and attempts cleanup of that invocation's conversation. Cleanup failure does not invalidate a measured quota. Stream text is discarded. Concurrent reads share a probe; a reply observed within ten seconds is reused to prevent duplicate probes.
+Root `install.ps1` installs both providers by default, or selects one with `-Tool Claude` / `-Tool Codex`. `scripts/install-claude.ps1` owns the existing `%USERPROFILE%\.local\bin\claudeli.cmd` launcher. Its target remains root `cli.cjs`, so existing Claude helpers and connections continue working.
 
-Watch reads every five minutes. It makes requests only while a watch command is running; the background helper does not poll independently. Quitting watch stops recurring requests. The helper remains available for later commands until `--stop` or process/session termination.
+`codex/install.ps1` installs its module folder on user PATH, removing only its previous standalone Desktop folder and duplicate current-module entries. It preserves unrelated entries in order. `-Uninstall` removes those Codex entries; `-PathScope Process` enables registry-free installer checks. The old source folder is preserved while installed commands resolve to this repo.
 
-Only usage measurements are saved in `.usage-snapshot.json`; the local pipe token is in `.runtime-key`. Both are excluded from Git. Saved snapshots are diagnostic only: normal commands require a successful live request and never pass off saved readings as current.
+Root `tests.ps1` and `npm test` run both suites. Provider-specific npm scripts allow isolated checks. Test fixtures and Claude runtime files are excluded from Git.
 
-Reconnect after account changes because the helper is bound to the Desktop account active when it connected. HTTP redirects are rejected, and there is no arbitrary URL setting. No Claude installation files or security settings are modified.
+## Claude
+
+`claudeli` connects to a hidden Node helper through a token-authenticated Windows named pipe. First connection reads Desktop's cookie database while Desktop is quit because Chromium locks it. Current-user DPAPI and AES-GCM unlock the session; the helper keeps credentials in memory so Desktop can reopen. Installed Claude files and security settings are unchanged.
+
+Each reading first requests the authenticated organization usage endpoint. If any overall account window is exposed, its REST values are shown directly. If both are missing, one temporary dot-message probe supplies a real `message_limit` event. REST utilization is a percentage; SSE utilization is a fraction. Missing windows remain unavailable, and a passed reset never silently clears usage.
+
+Each probe confirms temporary mode before sending. Completions are never automatically retried. Cleanup targets only that invocation's conversation; cleanup failure does not discard measured usage. Stream text is discarded. Concurrent reads share one probe; replies observed within ten seconds are reused to prevent duplicates.
+
+Watch reads every five minutes only while its command is running. The helper does not poll independently. `.usage-snapshot.json` stores only measured usage and timestamps; `.runtime-key` stores a random local pipe token. Saved readings are diagnostic, never substituted for failed live requests. Reconnect after account changes because the helper is bound to the Desktop account active at connection time. Authenticated HTTP redirects are blocked.
+
+## Codex
+
+`codex/codex-limits.cmd` invokes Windows PowerShell 5.1 without a profile, targeting `limits.ps1` by its own absolute folder. Its implementation filename avoids PowerShell selecting a policy-blocked `codex-limits.ps1`.
+
+The command reads JSONL files under `CODEX_HOME/sessions` and `archived_sessions`, defaulting to the user's `.codex`. UNC roots are refused. It accepts only actual `event_msg` / `token_count` events with non-null account `rate_limits` for `limit_id=codex` or legacy absent IDs. Embedded conversation text and model-specific buckets cannot replace account observations. The newest event timestamp wins across active and archived sessions.
+
+Readers share active files with writers and ignore incomplete/malformed lines. Files are checked newest-modified first; with append-only logs, scanning stops when file modification predates the best observation. Artificially backdated modification times can invalidate that optimization.
+
+Window durations identify 300-minute and 10080-minute limits. Remaining percentage is `max(0, 100 - used_percent)`, formatted to one decimal at most. Missing/invalid fields remain unavailable. Reset seconds become local times with UTC offsets. Exactly two lines are printed, including absent data. All observations are labeled cached; passed resets are labeled out of date, and no post-reset allowance is predicted.
+
+Codex makes no network requests or CLI calls, reads no auth files, and prints or stores no transcripts, paths, credentials, credits, or plan details. It does not validate account identity, so a cached observation may belong to the previous account after switching until Codex records a newer one.

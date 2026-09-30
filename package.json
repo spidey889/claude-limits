@@ -2,12 +2,14 @@
   "name": "claude-limits",
   "version": "0.1.0",
   "private": true,
-  "description": "Windows CLI to check real Claude Desktop 5-hour and weekly usage, reset times, and live updates, including free accounts.",
+  "description": "Windows CLI tools for Claude and Codex usage limits: fresh Claude readings and offline Codex snapshots.",
   "engines": {
     "node": ">=22.13"
   },
   "scripts": {
-    "test": "node --test test/*.test.cjs"
+    "test": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tests.ps1",
+    "test:claude": "node --test test/*.test.cjs",
+    "test:codex": "powershell -NoProfile -ExecutionPolicy Bypass -File ./codex/tests.ps1"
   },
   "license": "MIT"
 }
