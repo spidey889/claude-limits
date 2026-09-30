@@ -1,6 +1,6 @@
 # Claude Limits
 
-A private Windows command for the usage values Claude actually exposes, including free accounts.
+A local Windows command for the usage values Claude actually exposes, including free accounts.
 
 ```powershell
 claudeli
