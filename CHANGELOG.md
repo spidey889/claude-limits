@@ -8,3 +8,4 @@
 - Covered missing values, REST/SSE units, stream chunking, host restrictions, and single-attempt probe cleanup with tests.
 - Verified 16 automated tests, the installed command from an unrelated PowerShell folder, and fresh one-shot/watch readings while Desktop is open. A provider timeout was reported as a failed refresh; no saved snapshot was presented as current.
 - Renamed the private GitHub repository to spidey889/claude-limit and updated the local origin remote to match.
+- Kept the final repository name claude-limits to match the local folder. Renamed the same private repository in place; no duplicate repository was created.
