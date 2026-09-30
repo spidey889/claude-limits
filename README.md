@@ -30,3 +30,7 @@ The command works from any PowerShell folder through `%USERPROFILE%\.local\bin\c
 ```powershell
 npm test
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).

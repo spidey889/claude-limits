@@ -2,7 +2,12 @@
   "name": "claude-limits",
   "version": "0.1.0",
   "private": true,
-  "description": "Local Windows CLI for usage values actually exposed by Claude",
-  "engines": { "node": ">=22.13" },
-  "scripts": { "test": "node --test test/*.test.cjs" }
+  "description": "Windows CLI to check real Claude Desktop 5-hour and weekly usage, reset times, and live updates, including free accounts.",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.cjs"
+  },
+  "license": "MIT"
 }

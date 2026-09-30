@@ -10,3 +10,4 @@
 - Renamed the private GitHub repository to spidey889/claude-limit and updated the local origin remote to match.
 - Kept the final repository name claude-limits to match the local folder. Renamed the same private repository in place; no duplicate repository was created.
 - Made the existing GitHub repository public at the user's request after checking its history for credential and runtime files.
+- Added the MIT license, package license metadata, and a GitHub description covering Desktop usage, weekly/session limits, and live updates for free accounts.
