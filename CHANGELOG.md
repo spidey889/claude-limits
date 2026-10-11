@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- Replaced the crowded dotted usage bars after visual feedback: Claude leads with percent used and uses ten spaced solid/hollow cells for used/unused allowance. The user preferred used percentages, so the final display keeps that meaning and makes unused cells bright and clearly outlined. Removed bar brackets, colons, and vertical separators; reset times and the checked time are secondary. Terminal color highlights usage and warns when it is high, with plain output for redirection or disabled color. Fresh-reading behavior stays intact.
+- Verified the clearer display with 27 Claude checks and live colored/plain terminal output.
 - Added compact, aligned 12-cell usage bars to Claude's two quota rows, preserving exact percent-used values, reset times, and the checked timestamp. Unknown usage has no bar; only visual fill is capped for over-limit readings. The display uses the existing formatter in one-shot and watch modes, adding no requests or dependencies.
 - Reduced fresh Claude-check latency by remembering an empty usage endpoint for five minutes, returning as soon as both streamed quota windows arrive, and moving temporary-conversation cleanup off the response path. Read-only endpoint support is checked again after the five-minute interval.
 - Kept the ten-second duplicate-probe guard, while invalidating reuse when a quota reset passes or the system clock moves backwards. Failed live checks never fall back to saved quota.

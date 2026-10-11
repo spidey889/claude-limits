@@ -6,7 +6,7 @@ const { parseUsage, parseMessageLimit, formatUsage } = require('../usage.cjs');
 test('a real empty free-plan response never becomes zero usage', () => {
   const usage = parseUsage({ five_hour: null, seven_day: null, limits: [] });
   assert.deepEqual(usage, { fiveHour: null, weekly: null });
-  assert.equal(formatUsage(usage), '5h: not exposed by Claude\nWeekly: not exposed by Claude');
+  assert.equal(formatUsage(usage), '5h      not exposed by Claude\nWeekly  not exposed by Claude');
 });
 
 test('REST percentages, valid zero, and independently missing weekly data', () => {
@@ -47,4 +47,25 @@ test('malformed values cannot masquerade as measurements', () => {
 test('a passed reset never silently resets a snapshot to zero', () => {
   const usage = parseUsage({ five_hour: { utilization: 75, resets_at: '2020-01-01T10:00:00Z' } });
   assert.match(formatUsage(usage), /75% used.*reset time passed; refresh required/);
+});
+
+test('used allowance stays exact even when the visual bar reaches capacity', () => {
+  const usage = parseUsage({ five_hour: { utilization: 26 }, seven_day: { utilization: 1 } });
+  const rendered = formatUsage(usage);
+  assert.match(rendered, /26% used/);
+  assert.match(rendered, /1% used/);
+  assert.equal(usage.fiveHour.percent, 26);
+  assert.match(formatUsage(parseUsage({ five_hour: { utilization: 0 }, seven_day: { utilization: 127.5 } })), /0% used.*\nWeekly.*127.5% used/);
+  assert.doesNotMatch(formatUsage(parseUsage({ five_hour: { resets_at: '2030-01-01T10:00:00Z' } })), /0% used/);
+});
+
+test('color adds emphasis without changing the readable text or column alignment', () => {
+  const { stripVTControlCharacters } = require('node:util');
+  const usage = parseUsage({ five_hour: { utilization: 26 }, seven_day: { utilization: 99 } });
+  const plain = formatUsage(usage);
+  const colored = formatUsage(usage, Date.now(), { color: true });
+  assert.match(colored, /\x1b\[1;92m/);
+  assert.match(colored, /\x1b\[1;91m/);
+  assert.equal(stripVTControlCharacters(colored), plain);
+  assert.doesNotMatch(plain, /\x1b|░/);
 });

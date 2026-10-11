@@ -74,14 +74,16 @@ async function main() {
   }
   if (action === 'ping') { console.log('Connected. You can reopen Claude Desktop.'); return; }
   const watch = args.includes('--watch');
+  const color = Boolean(process.stdout.isTTY && !('NO_COLOR' in process.env) && process.stdout.hasColors());
   if (watch) console.log('Refreshes every 5 minutes. Free-plan refreshes use a tiny test message. Ctrl+C stops.');
   while (true) {
     try {
       const { result } = await talk('read', token);
       if (watch && process.stdout.isTTY) process.stdout.write('\x1b[2J\x1b[H');
       if (watch && process.stdout.isTTY) console.log('Every 5 minutes | tiny probe on free plans | Ctrl+C stops');
-      console.log(formatUsage(result.usage));
-      console.log('Checked ' + new Date(result.observedAt).toLocaleTimeString());
+      console.log(formatUsage(result.usage, Date.now(), { color }));
+      const checked = 'Checked ' + new Date(result.observedAt).toLocaleTimeString();
+      console.log(color ? '\x1b[90m' + checked + '\x1b[0m' : checked);
     } catch (error) {
       if (!watch) throw error;
       console.error('Refresh failed: ' + error.message);

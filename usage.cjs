@@ -40,20 +40,27 @@ function parseMessageLimit(raw) {
   };
 }
 
-function formatUsage(usage, now = Date.now()) {
+function formatUsage(usage, now = Date.now(), { color = false } = {}) {
+  const paint = (text, code) => color ? `\x1b[${code}m${text}\x1b[0m` : text;
   function line(label, value) {
-    if (!value) return label + ': not exposed by Claude';
-    const parts = [value.percent === null ? 'usage not exposed' : `${Number(value.percent.toFixed(1))}% used`];
+    const heading = label.padEnd(6) + '  ';
+    if (!value) return heading + 'not exposed by Claude';
+    let resetText = '', resetPassed = false;
     if (value.resetsAt) {
       const reset = new Date(value.resetsAt);
-      parts.push(reset.getTime() <= now ? 'reset time passed; refresh required'
-        : 'resets ' + reset.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }));
+      resetPassed = reset.getTime() <= now;
+      resetText = resetPassed ? 'reset time passed; refresh required'
+        : 'resets ' + reset.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
     }
-    if (value.percent === null) return label + ': ' + parts.join(' | ');
-    // Clamp only the visual fill: an over-limit reading still shows its exact percent.
-    const width = 12, filled = Math.round(Math.min(value.percent, 100) * width / 100);
-    const bar = '[' + '█'.repeat(filled) + '░'.repeat(width - filled) + ']';
-    return (label + ':').padEnd(8) + bar + ' ' + parts.join(' | ');
+    const suffix = resetText ? '   ' + paint(resetText, resetPassed ? 93 : 90) : '';
+    if (value.percent === null) return heading + 'usage not exposed' + suffix;
+    // Clamp only visual fill: an over-limit reading still shows its exact percent.
+    // Bright hollow cells keep the unused portion visible beside the used cells.
+    const code = resetPassed ? 93 : value.percent < 50 ? 92 : value.percent < 80 ? 93 : 91;
+    const filled = Math.round(Math.min(value.percent, 100) / 10);
+    const bar = Array.from({ length: 10 }, (_, index) => paint(index < filled ? '■' : '□', index < filled ? code : 37)).join(' ');
+    const percent = (Number(value.percent.toFixed(1)) + '% used').padStart(10);
+    return heading + paint(percent, '1;' + code) + '   ' + bar + suffix;
   }
   return [line('5h', usage.fiveHour), line('Weekly', usage.weekly)].join('\n');
 }

@@ -20,7 +20,9 @@ Each probe confirms temporary mode before sending. Completions are never automat
 
 Watch reads every five minutes only while its command is running. The helper does not poll independently. `.usage-snapshot.json` stores only measured usage and timestamps; `.runtime-key` stores a random local pipe token. Saved readings are diagnostic, never substituted for failed live requests. Reconnect after account changes because the helper is bound to the Desktop account active at connection time. Authenticated HTTP redirects are blocked.
 
-Claude output keeps two quota rows plus the checked timestamp. Each known percentage has an aligned 12-cell block bar showing percent used, rounded to the nearest cell, followed by its exact percentage and reset time. Visual fill is capped at 100%; the displayed percentage is not capped. Unavailable percentages have no bar. The same formatter serves one-shot and watch output, without extra requests or terminal dependencies.
+Claude output keeps two quota rows plus the checked timestamp. Output leads with the measured percent used, formatted to one decimal at most. Ten spaced solid/hollow squares show used/unused portions, rounded to the nearest cell. Unknown percentages have no bar. Only bar fill is capped at 100%; over-limit percentages remain exact. Passed resets remain flagged rather than implying replenished allowance. The same formatter serves one-shot and watch output, without extra requests or dependencies.
+
+On a TTY with Node's detected color support, used allowance is bold green below 50%, amber from 50%, and red from 80%. Passed resets use amber for the reading and warning. Hollow unused cells use bright neutral text for visibility; future reset times and the checked timestamp use quieter gray. Text and shapes carry the same meaning without color. Color detection honors `NO_COLOR` and `NODE_DISABLE_COLORS`; redirected output has no ANSI styling.
 
 ## Codex
 

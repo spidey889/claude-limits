@@ -38,15 +38,15 @@ claudeli --stop
 
 `claudeli` fetches real usage. Watch refreshes every five minutes; Ctrl+C stops watching. `--stop` forgets the helper's in-memory session.
 
-Usage has compact 12-cell bars that fill as **percent used** increases. The exact percentage and reset time stay beside each bar, with the checked time below:
+The used percentage comes first so you can see what you have spent at a glance. Solid squares show used allowance; bright hollow squares make the unused portion easy to see. Reset times and the checked time stay secondary:
 
 ```text
-5h:     [███░░░░░░░░░] 26% used | resets Sun 5:10 PM
-Weekly: [░░░░░░░░░░░░] 1% used | resets Sun 11:30 AM
+5h        26% used   ■ ■ ■ □ □ □ □ □ □ □   resets Sun 5:10 PM
+Weekly     1% used   □ □ □ □ □ □ □ □ □ □   resets Sun 11:30 AM
 Checked 1:07:20 PM
 ```
 
-Bar fill is rounded to the nearest cell; small values can show an empty bar. Unavailable percentages show no bar.
+Each bar has ten spaced cells, rounded to the nearest cell. A supported terminal uses green below 50% used, amber from 50%, and red from 80%, with quieter reset times. `NO_COLOR` disables color; redirected output stays plain. Unknown percentages have no bar. Over-limit percentages stay exact while their bars are capped at full. Passed resets remain flagged and never imply replenished allowance.
 
 To keep fresh checks fast, the helper skips an empty read-only endpoint for five minutes after confirming it exposes neither window, returns as soon as both quota windows arrive, and deletes the temporary conversation in the background. Checks within ten seconds reuse the latest measurement unless a reset has passed. Older saved snapshots never replace failed live checks. Claude's network and reply time still affect fresh reads.
 
