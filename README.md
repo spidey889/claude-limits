@@ -24,6 +24,36 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Tool Claude
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Tool Codex
 ```
 
+For a new Claude-only install with automatic connection, **open Claude Desktop and sign in first**, then paste this block into PowerShell. It downloads the project, installs `claudeli`, quits Claude briefly, connects, and reopens Claude even if connection fails:
+
+```powershell
+& {
+    $ErrorActionPreference = 'Stop'
+    git clone https://github.com/spidey889/claude-limits.git
+    if ($LASTEXITCODE -ne 0) { return }
+    Set-Location .\claude-limits
+    powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Tool Claude
+    if ($LASTEXITCODE -ne 0) { return }
+    $claudeSessionId = (Get-Process -Id $PID).SessionId
+    $claudeProcesses = @(Get-Process -Name Claude -ErrorAction SilentlyContinue |
+        Where-Object { $_.SessionId -eq $claudeSessionId -and $_.Path })
+    if (-not $claudeProcesses.Count) {
+        Write-Host 'Open Claude Desktop and sign in, then rerun the connection steps.'
+        return
+    }
+    $claudeAppPath = $claudeProcesses[0].Path
+    try {
+        $claudeProcesses | Where-Object { $_.Path -eq $claudeAppPath } | Stop-Process -ErrorAction Stop
+        Start-Sleep -Milliseconds 700
+        & "$env:USERPROFILE\.local\bin\claudeli.cmd" --connect
+    } finally {
+        Start-Process -FilePath $claudeAppPath
+    }
+}
+```
+
+To reconnect after a restart, quit Desktop from its tray menu, run `claudeli --connect`, then reopen Desktop. Reopen PowerShell after setup, then run `claudeli`. Your signed-in Desktop session must already exist; setup cannot sign you in.
+
 Claude requires Node.js 22.13+ with `node:sqlite`. If Node is missing, too old, or lacks SQLite support, the installer explains what to install and asks you to reopen PowerShell and run it again; it stops before changing the launcher or PATH. Codex requires only Windows PowerShell 5.1; it has no Node or CLI dependency. Reopen PowerShell after installation to receive the updated user PATH. The Codex installer replaces the old `%USERPROFILE%\Desktop\codex-limits` PATH entry with this repository's `codex` folder and removes recognized old `codex-limits.cmd` launchers. Unrelated PATH entries and the remaining original source files are preserved.
 
 ## Claude

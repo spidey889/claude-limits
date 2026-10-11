@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- Added a copy-paste Claude-only download/install/connect block. It requires Claude Desktop open and signed in, stops cleanly after failed download/install, quits only matching Claude processes in the current Windows session, connects through the installed launcher without waiting for a PATH refresh, and reopens Desktop even if connection fails. Retained manual reconnect instructions for later restarts.
+- Validation: parsed and executed the documented block with isolated Windows PowerShell mocks. Five checks covered successful setup, failed install, missing Desktop, failed connection, and failed quit; only the selected current-session executable was eligible for quitting/reopening. No real app, install, or account requests were used.
 - Replaced Claude installer's raw missing-Node error with a two-line instruction to install Node.js 22.13+, reopen PowerShell, and retry. Older Node versions and builds without SQLite support receive the same message before launcher/PATH changes. The root installer preserves the failure exit code.
 - Validation: nine isolated Windows PowerShell installer checks passed. Covered missing Node through direct/Claude/combined entry points, simulated older versions and unavailable SQLite, the minimum/current version gate, and Codex-only selection. Write guards prevented launcher/PATH changes during checks.
 - Rebuilt the Claude probe around preparing one empty temporary chat after a successful reading, removing chat creation from the next command's wait. Preparation sends no message and captures no quota; every reserved chat is used once, then deleted. Unused reservations expire after 30 minutes without polling, and stopping the helper cleans up pending preparation.
