@@ -3,6 +3,45 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { createReader } = require('../measurement.cjs');
 
+test('fresh quota in a rejected endpoint response does not trigger a message probe', async () => {
+  let probes = 0, saved;
+  const measured = { usage: { fiveHour: { percent: 99, resetsAt: null, limited: true }, weekly: null },
+    source: 'limit-error', observedAt: '2030-01-01T10:00:00Z' };
+  const reader = createReader({ usage: async () => { throw Object.assign(new Error('blocked'), { status: 429, measurement: measured }); } },
+    async () => { probes++; }, result => { saved = result; });
+  assert.deepEqual(await reader(), measured);
+  assert.deepEqual(saved, measured);
+  assert.equal(probes, 0);
+});
+
+test('independent blocked commands still request new measurements', async () => {
+  let probes = 0;
+  const reader = createReader({ usage: async () => ({ fiveHour: null, weekly: null }) }, async () => {
+    probes++;
+    throw Object.assign(new Error('blocked'), { status: 429, measurement: {
+      usage: { fiveHour: { percent: 98 + probes, resetsAt: null, limited: true }, weekly: null },
+      source: 'limit-error', observedAt: new Date(2000000000000 + probes * 1000).toISOString(),
+    } });
+  }, () => {});
+  const first = await reader(), second = await reader();
+  assert.equal(first.usage.fiveHour.percent, 99);
+  assert.equal(second.usage.fiveHour.percent, 100);
+  assert.notEqual(first.observedAt, second.observedAt);
+  assert.equal(probes, 2);
+});
+
+test('a later generic 429 cannot reuse an earlier confirmed limit measurement', async () => {
+  let reads = 0, saved = 0;
+  const reader = createReader({ usage: async () => {
+    const error = Object.assign(new Error('rate-limited'), { status: 429 });
+    if (++reads === 1) error.measurement = { usage: { fiveHour: { percent: 99, resetsAt: null }, weekly: null }, source: 'limit-error' };
+    throw error;
+  } }, () => { throw new Error('Must not probe'); }, () => { saved++; });
+  assert.equal((await reader()).usage.fiveHour.percent, 99);
+  await assert.rejects(reader(), /rate-limited/);
+  assert.equal(saved, 1);
+});
+
 test('available read-only quota never invokes a message probe', async () => {
   let probes = 0;
   const reader = createReader({ usage: async () => ({ fiveHour: { percent: 8, resetsAt: null }, weekly: null }) },

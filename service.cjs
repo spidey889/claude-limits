@@ -20,7 +20,7 @@ const runtime = require('./runtime.cjs');
   const client = makeClient(session);
   const prober = createProber(client);
   const reader = createReader(client, () => prober.read(), async result => {
-    // Only percentages/reset timestamps are saved. Cookies and chats stay in memory.
+    // Only quota metadata is saved. Cookies and chats stay in memory.
     fs.writeFileSync(runtime.snapshotPath, JSON.stringify(result, null, 2) + '\n', { mode: 0o600 });
   });
   const server = net.createServer(socket => {

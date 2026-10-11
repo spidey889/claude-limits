@@ -1,7 +1,57 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { parseUsage, parseMessageLimit, formatUsage } = require('../usage.cjs');
+const { parseUsage, parseMessageLimit, parseLimitError, formatUsage } = require('../usage.cjs');
+
+const limitError = windows => ({ type: 'error', error: { type: 'rate_limit_error',
+  details: { error_code: 'message_limit_exceeded', message_limit: { type: 'exceeded_limit', windows } } } });
+
+test('confirmed blocked quota preserves 99 percent rather than inventing 100', () => {
+  const usage = parseLimitError(limitError({
+    '5h': { status: 'exceeded_limit', utilization: 0.99, resets_at: 1893492000 },
+    '7d': { status: 'within_limit', utilization: 0.04 },
+  }));
+  assert.deepEqual(usage.fiveHour, { percent: 99, resetsAt: '2030-01-01T10:00:00.000Z', limited: true });
+  assert.equal(usage.weekly.percent, 4);
+  assert.equal(usage.weekly.limited, undefined);
+  const plain = formatUsage(usage, 1800000000000);
+  assert.match(plain, /5h.*99% used.*LIMIT REACHED.*resets/);
+  assert.doesNotMatch(plain.split('\n')[1], /LIMIT REACHED/);
+  assert.doesNotMatch(plain, /100%/);
+  const colored = formatUsage(usage, 1800000000000, { color: true });
+  assert.equal(require('node:util').stripVTControlCharacters(colored), plain);
+  assert.match(colored, /\x1b\[1;95mLIMIT REACHED/);
+});
+
+test('weekly and simultaneous confirmed blocks label only the supplied windows', () => {
+  const usage = parseLimitError(limitError({
+    '5h': { status: 'within_limit', utilization: 0.2 },
+    '7d': { status: 'exceeded_limit', utilization: 1.01 },
+  }));
+  const rows = formatUsage(usage).split('\n');
+  assert.doesNotMatch(rows[0], /LIMIT REACHED/);
+  assert.match(rows[1], /101% used.*LIMIT REACHED/);
+  assert.equal((formatUsage(parseLimitError(limitError({
+    '5h': { status: 'exceeded_limit', utilization: 1 },
+    '7d': { status: 'exceeded_limit', utilization: 1 },
+  }))).match(/LIMIT REACHED/g) ?? []).length, 2);
+});
+
+test('a confirmed block with no percentage remains explicitly unavailable', () => {
+  const usage = parseLimitError(limitError({ '5h': { status: 'exceeded_limit' } }));
+  assert.deepEqual(usage.fiveHour, { percent: null, resetsAt: null, limited: true });
+  assert.match(formatUsage(usage), /usage not exposed.*LIMIT REACHED/);
+  assert.doesNotMatch(formatUsage(usage), /\d+%|■/);
+  assert.equal(parseLimitError(limitError({})), null);
+});
+
+test('generic throttles and unrelated error data never become quota readings', () => {
+  assert.equal(parseLimitError({ error: { type: 'rate_limit_error', message: 'limit reached',
+    details: { windows: { '5h': { utilization: 1 } } } } }), null);
+  const raw = limitError({ '5h': { utilization: 1 } });
+  raw.error.details.error_code = 'other_error';
+  assert.equal(parseLimitError(raw), null);
+});
 
 test('a real empty free-plan response never becomes zero usage', () => {
   const usage = parseUsage({ five_hour: null, seven_day: null, limits: [] });

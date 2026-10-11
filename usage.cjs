@@ -34,10 +34,28 @@ function parseMessageLimit(raw) {
   const limit = raw?.message_limit ?? raw;
   if (!limit || typeof limit !== 'object') throw new Error('Invalid Claude quota event.');
   // Chat stream utilization is a fraction; the REST endpoint uses percentages.
-  return {
-    fiveHour: window(limit.windows?.['5h'], 100),
-    weekly: window(limit.windows?.['7d'], 100),
-  };
+  function quotaWindow(name) {
+    const value = limit.windows?.[name];
+    const measured = window(value, 100);
+    // A confirmed block is a separate state, not an inferred 100% reading.
+    if (value?.status === 'exceeded_limit') {
+      return { ...(measured ?? { percent: null, resetsAt: null }), limited: true };
+    }
+    return measured;
+  }
+  return { fiveHour: quotaWindow('5h'), weekly: quotaWindow('7d') };
+}
+
+function parseLimitError(raw) {
+  const error = raw?.error;
+  const details = error?.details;
+  const limit = details?.message_limit;
+  // This is the confirmed web completion error shape. A generic 429 is not
+  // evidence of a spent allowance and must never manufacture a percentage.
+  if (error?.type !== 'rate_limit_error' || details?.error_code !== 'message_limit_exceeded'
+    || limit?.type !== 'exceeded_limit') return null;
+  const usage = parseMessageLimit(limit);
+  return usage.fiveHour || usage.weekly ? usage : null;
 }
 
 function formatUsage(usage, now = Date.now(), { color = false } = {}) {
@@ -52,7 +70,8 @@ function formatUsage(usage, now = Date.now(), { color = false } = {}) {
       resetText = resetPassed ? 'reset time passed; refresh required'
         : 'resets ' + reset.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
     }
-    const suffix = resetText ? '   ' + paint(resetText, resetPassed ? 93 : 90) : '';
+    const limited = value.limited ? '   ' + paint('LIMIT REACHED', '1;95') : '';
+    const suffix = limited + (resetText ? '   ' + paint(resetText, resetPassed ? 93 : 90) : '');
     if (value.percent === null) return heading + 'usage not exposed' + suffix;
     // Clamp only visual fill: an over-limit reading still shows its exact percent.
     // Bright hollow cells keep the unused portion visible beside the used cells.
@@ -67,4 +86,4 @@ function formatUsage(usage, now = Date.now(), { color = false } = {}) {
   return [line('5h', usage.fiveHour), line('Weekly', usage.weekly)].join('\n');
 }
 
-module.exports = { parseUsage, parseMessageLimit, formatUsage, timestamp };
+module.exports = { parseUsage, parseMessageLimit, parseLimitError, formatUsage, timestamp };
