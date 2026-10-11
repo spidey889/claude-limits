@@ -60,7 +60,7 @@ try {
     $null = . (Join-Path $project 'limits.ps1') -CodexHome $testRoot
     $displaySnapshot = [pscustomobject]@{ Limits = $newer.payload.rate_limits }
     $colored = Format-LimitLine '5h' 300 $displaySnapshot $true
-    Assert ($colored.Contains(([string][char]27 + '[1;92m87.5% left'))) 'Healthy remaining allowance is not highlighted in green.'
+    Assert ($colored.Contains(([string][char]27 + '[1;93m87.5% left'))) 'Remaining allowance is not highlighted in yellow.'
     Assert (($colored -replace '\x1b\[[0-9;]+m', '') -eq $output[0]) 'Color changed the displayed values or layout.'
     $low = New-Event $now 95
     $lowSnapshot = [pscustomobject]@{ Limits = $low.payload.rate_limits }

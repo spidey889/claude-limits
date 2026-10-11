@@ -2,6 +2,7 @@
 
 ## 2026-10-11
 
+- Changed Codex's normal accent from green to yellow at the user's request, retaining red below 20% left. Updated current documentation and the existing color check.
 - Matched Codex's display to Claude's spaced square bars while keeping percent left as its main value. Solid cells show remaining allowance, with green for healthy allowance and amber/red as it runs low. Compact local reset times, a weekly date, and a quieter `cached` label replace the long timestamp and repeated cache warning. Passed resets still require refresh, and redirected or color-disabled output stays plain.
 - Validation: 41 Codex checks passed, including fractional remaining allowance, half-cell rounding, color/plain equivalence, stale resets, missing data, and existing command/installer behavior.
 - Renamed the offline Codex command from `codex-limits` to `codexli`. Replaced the tracked launcher and updated installer messages, checks, and current documentation. Installation removes recognized old launchers in the module and original Desktop folder, preserving other files. Cached-reading behavior and the two-line output stay intact.

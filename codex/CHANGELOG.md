@@ -2,6 +2,7 @@
 
 ## 2026-10-11
 
+- Changed the normal Codex accent to yellow instead of green; low remaining allowance stays red. Updated current documentation and the color check.
 - Replaced the crowded quota lines with Claude's aligned ten-cell square bars, leading with percent left. Filled cells show remaining allowance, highlighted green, amber, or red as allowance runs low. Reset text is compact, weekly dates stay visible, and cache labels are secondary. Missing values, stale-reset warnings, and plain redirected output remain explicit. Passed 41 checks, including remaining-bar rounding and color/plain equivalence.
 - Renamed the command to `codexli` and retired `codex-limits`. Installation removes recognized old launchers from the merged module and original standalone folder while preserving other files. Updated command-resolution and migration checks, including unrelated-launcher preservation. Offline cached readings keep the same two-line output.
 - Passed 36 module checks and 27 Claude tests through the combined suite. The installed `codexli` worked from another folder in 0.97 seconds, and both old launchers were removed.

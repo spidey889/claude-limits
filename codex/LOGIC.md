@@ -32,8 +32,8 @@
   remaining/used allowance. Fill rounds to the nearest cell, with half-cells rounded
   up. This matches Claude's layout while keeping Codex's remaining-allowance meaning.
 - On a non-redirected console supporting virtual-terminal styling (including Windows
-  Terminal), allowance is bold green from 50% left, amber below 50%, and red below
-  20%. Passed resets use amber. Hollow cells are bright neutral text; future resets
+  Terminal), allowance is bold yellow, switching to red below 20% left.
+  Passed resets use yellow. Hollow cells are bright neutral text; future resets
   and cache labels are quieter gray. `NO_COLOR`, `NODE_DISABLE_COLORS`, dumb terminals,
   and redirected output disable styling. Square glyphs use character codes so the
   source remains compatible with Windows PowerShell 5.1 without an encoding change.
