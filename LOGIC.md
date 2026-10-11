@@ -6,6 +6,8 @@ This repository contains two independent providers. Root Node modules and `test/
 
 Root `install.ps1` installs both providers by default, or selects one with `-Tool Claude` / `-Tool Codex`. `scripts/install-claude.ps1` owns the existing `%USERPROFILE%\.local\bin\claudeli.cmd` launcher. Its target remains root `cli.cjs`, so existing Claude helpers and connections continue working.
 
+Claude installation checks for a real `node.exe`, Node.js 22.13 or newer, and built-in SQLite before writing files or PATH. Missing or incompatible Node prints a concise two-line install/reopen/retry instruction and exits with code 1; the root installer preserves that failure rather than continuing. The capability probe exits explicitly to suppress SQLite warnings and module stack traces. Codex-only installation does not run this check.
+
 `codex/install.ps1` installs its module folder on user PATH, removing only its previous standalone Desktop folder and duplicate current-module entries. It preserves unrelated entries in order. Installation removes old `codex-limits.cmd` files from the current and previous folders only when their normalized contents match the new launcher. Remaining old source files and unrelated launchers are preserved. `-Uninstall` removes the Codex PATH entries; `-PathScope Process` enables registry-free installer checks. Installed commands resolve to this repo.
 
 Root `tests.ps1` and `npm test` run both suites. Provider-specific npm scripts allow isolated checks. Test fixtures and Claude runtime files are excluded from Git.

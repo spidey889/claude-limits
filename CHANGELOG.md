@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- Replaced Claude installer's raw missing-Node error with a two-line instruction to install Node.js 22.13+, reopen PowerShell, and retry. Older Node versions and builds without SQLite support receive the same message before launcher/PATH changes. The root installer preserves the failure exit code.
+- Validation: nine isolated Windows PowerShell installer checks passed. Covered missing Node through direct/Claude/combined entry points, simulated older versions and unavailable SQLite, the minimum/current version gate, and Codex-only selection. Write guards prevented launcher/PATH changes during checks.
 - Rebuilt the Claude probe around preparing one empty temporary chat after a successful reading, removing chat creation from the next command's wait. Preparation sends no message and captures no quota; every reserved chat is used once, then deleted. Unused reservations expire after 30 minutes without polling, and stopping the helper cleans up pending preparation.
 - Removed ten-second completed-reading reuse after the user explicitly required fresh numbers on every independent invocation. Overlapping commands still share an active request. Preserved read-only endpoint preference, five-minute empty-endpoint hints, early stream return, cleanup, and single-attempt completions.
 - Before this change, a measured fresh check took 3.77 seconds; an immediate repeat took 0.40 seconds by reusing the same observation. That repeat is not a fresh-check benchmark.

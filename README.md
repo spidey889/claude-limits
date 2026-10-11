@@ -24,7 +24,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Tool Claude
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Tool Codex
 ```
 
-Claude requires Node.js 22.13+ with `node:sqlite`. Codex requires only Windows PowerShell 5.1; it has no Node or CLI dependency. Reopen PowerShell after installation to receive the updated user PATH. The Codex installer replaces the old `%USERPROFILE%\Desktop\codex-limits` PATH entry with this repository's `codex` folder and removes recognized old `codex-limits.cmd` launchers. Unrelated PATH entries and the remaining original source files are preserved.
+Claude requires Node.js 22.13+ with `node:sqlite`. If Node is missing, too old, or lacks SQLite support, the installer explains what to install and asks you to reopen PowerShell and run it again; it stops before changing the launcher or PATH. Codex requires only Windows PowerShell 5.1; it has no Node or CLI dependency. Reopen PowerShell after installation to receive the updated user PATH. The Codex installer replaces the old `%USERPROFILE%\Desktop\codex-limits` PATH entry with this repository's `codex` folder and removes recognized old `codex-limits.cmd` launchers. Unrelated PATH entries and the remaining original source files are preserved.
 
 ## Claude
 
