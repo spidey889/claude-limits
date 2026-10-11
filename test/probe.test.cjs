@@ -1,7 +1,7 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { readQuotaStream, probeQuota } = require('../probe.cjs');
+const { readQuotaStream, probeQuota, createProber } = require('../probe.cjs');
 
 async function* chunks(text) {
   const bytes = Buffer.from(text);
@@ -114,4 +114,97 @@ test('a malformed creation response still cleans up only the requested conversat
   assert.equal(calls.length, 2);
   assert.equal(calls[1].route, calls[0].route + '/' + uuid);
   assert.equal(calls[1].options.method, 'DELETE');
+});
+
+function preparedFixture({ prepareGate = null, failPreparation = false, failSecondCompletion = false } = {}) {
+  const calls = [], created = [];
+  let completions = 0;
+  const client = { organization: 'test', request: async (route, options) => {
+    calls.push({ route, method: options.method });
+    if (options.method === 'DELETE') return {};
+    if (route.endsWith('/completion')) {
+      completions++;
+      if (failSecondCompletion && completions === 2) throw new Error('connection lost');
+      return { body: chunks(completeQuota.replace('0.04', String(completions / 100))) };
+    }
+    const body = JSON.parse(options.body);
+    assert.equal(body.is_temporary, true);
+    assert.equal(body.prompt, undefined, 'Preparing an empty chat must never send a message.');
+    created.push(body.uuid);
+    if (created.length === 2) {
+      if (failPreparation) throw new Error('setup unavailable');
+      if (prepareGate) await prepareGate.promise;
+    }
+    return { json: async () => ({ uuid: body.uuid, is_temporary: true }) };
+  } };
+  return { client, calls, created, get completions() { return completions; } };
+}
+
+test('a prepared empty chat removes setup from the next command while quota stays fresh', async () => {
+  const gate = Promise.withResolvers();
+  const fixture = preparedFixture({ prepareGate: gate });
+  const prober = createProber(fixture.client);
+  try {
+    assert.equal((await prober.read()).usage.fiveHour.percent, 1);
+    assert.equal(fixture.created.length, 2);
+    assert.equal(fixture.completions, 1, 'Background setup sent a message.');
+    gate.resolve();
+    await new Promise(setImmediate);
+    const start = fixture.calls.length;
+    assert.equal((await prober.read()).usage.fiveHour.percent, 2);
+    assert.equal(fixture.calls[start].route, '/api/organizations/test/chat_conversations/' + fixture.created[1] + '/completion');
+    assert.equal(new Set(fixture.created).size, 3, 'A temporary conversation was reused for multiple messages.');
+  } finally { gate.resolve(); await prober.close(); }
+  assert.equal(fixture.calls.filter(call => call.method === 'DELETE').length, 3);
+});
+
+test('failed background setup cannot lose a reading or retry a failed completion', async () => {
+  const fixture = preparedFixture({ failPreparation: true, failSecondCompletion: true });
+  const prober = createProber(fixture.client);
+  try {
+    assert.equal((await prober.read()).usage.fiveHour.percent, 1);
+    await new Promise(setImmediate);
+    await assert.rejects(prober.read(), /connection lost/);
+    assert.equal(fixture.completions, 2);
+    assert.equal(fixture.created.length, 3);
+  } finally { await prober.close(); }
+});
+
+test('idle preparation expires without polling or sending another message', async () => {
+  const fixture = preparedFixture();
+  const prober = createProber(fixture.client, { idleMs: 1 });
+  try {
+    await prober.read();
+    await new Promise(resolve => setTimeout(resolve, 20));
+    assert.equal(fixture.created.length, 2);
+    assert.equal(fixture.completions, 1);
+    assert.equal(fixture.calls.filter(call => call.method === 'DELETE').length, 2);
+  } finally { await prober.close(); }
+});
+
+test('stopping during background preparation cleans up the reserved empty chat', async () => {
+  const gate = Promise.withResolvers();
+  const fixture = preparedFixture({ prepareGate: gate });
+  const prober = createProber(fixture.client);
+  await prober.read();
+  const closing = prober.close();
+  gate.resolve();
+  await closing;
+  await assert.rejects(prober.read(), /helper stopped/);
+  assert.equal(fixture.completions, 1);
+  assert.equal(fixture.calls.filter(call => call.method === 'DELETE').length, 2);
+});
+
+test('stopping while a command claims pending setup never sends a new message', async () => {
+  const gate = Promise.withResolvers();
+  const fixture = preparedFixture({ prepareGate: gate });
+  const prober = createProber(fixture.client);
+  await prober.read();
+  const next = prober.read();
+  const rejected = assert.rejects(next, /helper stopped/);
+  await prober.close();
+  gate.resolve();
+  await rejected;
+  assert.equal(fixture.created.length, 2);
+  assert.equal(fixture.completions, 1);
 });

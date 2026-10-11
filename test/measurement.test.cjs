@@ -11,17 +11,18 @@ test('available read-only quota never invokes a message probe', async () => {
   assert.equal(probes, 0);
 });
 
-test('concurrent commands and a just-finished reading share one probe', async () => {
+test('only concurrent commands share a probe; independent commands always read fresh', async () => {
   let probes = 0, now = 2000000000000;
   const reader = createReader({ usage: async () => ({ fiveHour: null, weekly: null }) },
     async () => { probes++; return { usage: { fiveHour: { percent: 4, resetsAt: null }, weekly: null },
       source: 'reply', observedAt: new Date(now).toISOString() }; }, async () => {}, () => now);
   await Promise.all([reader(), reader()]);
-  await reader();
   assert.equal(probes, 1);
-  now += 300000;
   await reader();
   assert.equal(probes, 2);
+  now += 300000;
+  await reader();
+  assert.equal(probes, 3);
 });
 
 test('request failures do not trigger a quota-spending fallback', async () => {
@@ -62,19 +63,19 @@ test('an empty endpoint is skipped briefly, then checked again for read-only quo
   assert.equal(probes, 2);
 });
 
-test('a passed reset invalidates the ten-second reuse window', async () => {
+test('a command after a reset requests a new reading without predicting replenishment', async () => {
   let endpoints = 0, now = 2000000000000;
   const reader = createReader({ usage: async () => {
     endpoints++;
     return { fiveHour: { percent: 8, resetsAt: new Date(now + 1000).toISOString() }, weekly: null };
   } }, async () => {}, async () => {}, () => now);
-  await reader();
+  assert.equal((await reader()).usage.fiveHour.percent, 8);
   now += 1000;
-  await reader();
+  assert.equal((await reader()).usage.fiveHour.percent, 8);
   assert.equal(endpoints, 2);
 });
 
-test('a backwards clock change invalidates recent-reading reuse', async () => {
+test('independent commands request new observations even when the clock moves backwards', async () => {
   let endpoints = 0, now = 2000000000000;
   const reader = createReader({ usage: async () => {
     endpoints++;

@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const net = require('node:net');
 const crypto = require('node:crypto');
 const { makeClient } = require('./api.cjs');
-const { probeQuota } = require('./probe.cjs');
+const { createProber } = require('./probe.cjs');
 const { createReader } = require('./measurement.cjs');
 const runtime = require('./runtime.cjs');
 
@@ -17,7 +17,9 @@ const runtime = require('./runtime.cjs');
   input = '';
   if (!/^[a-f0-9]{64}$/.test(token)) throw new Error('Invalid local service token.');
   const expected = Buffer.from(token);
-  const reader = createReader(makeClient(session), probeQuota, async result => {
+  const client = makeClient(session);
+  const prober = createProber(client);
+  const reader = createReader(client, () => prober.read(), async result => {
     // Only percentages/reset timestamps are saved. Cookies and chats stay in memory.
     fs.writeFileSync(runtime.snapshotPath, JSON.stringify(result, null, 2) + '\n', { mode: 0o600 });
   });
@@ -39,6 +41,7 @@ const runtime = require('./runtime.cjs');
         if (message.action === 'ping') socket.end(JSON.stringify({ connected: true }) + '\n');
         else if (message.action === 'read') socket.end(JSON.stringify({ result: await reader() }) + '\n');
         else if (message.action === 'stop') {
+          await prober.close();
           socket.end(JSON.stringify({ stopped: true }) + '\n');
           server.close(() => process.exit(0));
         } else socket.end(JSON.stringify({ error: 'Invalid local command.' }) + '\n');
