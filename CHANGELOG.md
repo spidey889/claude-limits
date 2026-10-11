@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-11
+
+- Reduced fresh Claude-check latency by remembering an empty usage endpoint for five minutes, returning as soon as both streamed quota windows arrive, and moving temporary-conversation cleanup off the response path. Read-only endpoint support is checked again after the five-minute interval.
+- Kept the ten-second duplicate-probe guard, while invalidating reuse when a quota reset passes or the system clock moves backwards. Failed live checks never fall back to saved quota.
+- Added regressions for endpoint rechecks, reset boundaries, delayed reply tails, partial quota events, slow or failed cleanup, and malformed creation responses. No completion retries or new dependencies were added.
+- Validation: 25 Claude tests and 33 Codex checks passed. After restarting the installed helper, two fresh observations took 2.91 and 3.50 seconds; an immediate repeat took 0.24 seconds. Live times depend on Claude and the network.
+
 ## 2026-09-30
 
 - Confirmed on a real free Claude Desktop account that the authenticated usage endpoint returns null windows, while a reply includes both exact 5-hour and weekly usage and reset times.

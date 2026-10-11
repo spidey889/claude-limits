@@ -1,14 +1,20 @@
 'use strict';
 
 function createReader(client, probe, save, now = Date.now) {
-  let pending = null, last = null;
+  let pending = null, last = null, emptyEndpointUntil = 0;
   return async function read() {
     if (pending) return pending;
     // Concurrent commands share one probe. A just-finished reply is not sent twice.
-    if (last && now() - Date.parse(last.observedAt) < 10000) return last;
+    const time = now(), age = last ? time - Date.parse(last.observedAt) : NaN;
+    const resetPassed = last && Object.values(last.usage)
+      .some(window => window?.resetsAt && Date.parse(window.resetsAt) <= time);
+    if (age >= 0 && age < 10000 && !resetPassed) return last;
     pending = (async () => {
-      const usage = await client.usage();
-      const result = usage.fiveHour || usage.weekly
+      // Remember endpoint availability, never saved quota. Recheck after five
+      // minutes so a newly exposed read-only window can avoid message probes.
+      const usage = now() < emptyEndpointUntil ? null : await client.usage();
+      if (usage) emptyEndpointUntil = usage.fiveHour || usage.weekly ? 0 : now() + 300000;
+      const result = usage && (usage.fiveHour || usage.weekly)
         ? { usage, observedAt: new Date(now()).toISOString(), source: 'endpoint' }
         : await probe(client);
       last = result;

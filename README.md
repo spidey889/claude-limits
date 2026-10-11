@@ -38,6 +38,8 @@ claudeli --stop
 
 `claudeli` fetches real usage. Watch refreshes every five minutes; Ctrl+C stops watching. `--stop` forgets the helper's in-memory session.
 
+To keep fresh checks fast, the helper skips an empty read-only endpoint for five minutes after confirming it exposes neither window, returns as soon as both quota windows arrive, and deletes the temporary conversation in the background. Checks within ten seconds reuse the latest measurement unless a reset has passed. Older saved snapshots never replace failed live checks. Claude's network and reply time still affect fresh reads.
+
 **Free-plan refreshes use allowance.** On the tested free account, Claude's read-only usage endpoint exposes no numbers. The fallback sends `Reply with a single dot.` in a new temporary conversation, reads its exact quota event, and attempts to delete that conversation. Earlier probe messages never accumulate as context. A running watch may send up to 12 tiny probes per hour. Missing data is reported rather than estimated.
 
 Cookies are unlocked locally through Windows DPAPI and remain in memory. Authenticated requests go only to `https://claude.ai`; redirects are blocked. The helper uses a token-authenticated local Windows named pipe. Only usage measurements and a random local pipe token are saved; both are ignored by Git. No chats, cookies, or account identifiers are stored in this repo.

@@ -18,6 +18,9 @@ async function readQuotaStream(body) {
     while ((boundary = /\r?\n\r?\n/.exec(buffer))) {
       consume(buffer.slice(0, boundary.index).replace(/\r\n/g, '\n'));
       buffer = buffer.slice(boundary.index + boundary[0].length);
+      // Once both account windows arrive, discard the reply tail. Leaving the
+      // async iterator also cancels the HTTP stream instead of keeping it open.
+      if (measurement?.usage.fiveHour && measurement.usage.weekly) return measurement;
     }
     // Reply contents are discarded in memory, never written to snapshots or logs.
     if (buffer.length > 2000000) throw new Error('Unexpected oversized Claude event.');
@@ -34,9 +37,9 @@ async function probeQuota(client) {
   const created = await client.request(route, { method: 'POST', body: JSON.stringify({
     uuid, name: 'Claude Limits probe', is_temporary: true,
   }) });
-  const conversation = await created.json();
   // Never retry a completion automatically: a retry could spend more allowance.
   try {
+    const conversation = await created.json();
     if (conversation.uuid !== uuid || conversation.is_temporary !== true) {
       throw new Error('Claude did not confirm a temporary probe conversation.');
     }
@@ -48,8 +51,10 @@ async function probeQuota(client) {
     return await readQuotaStream(response.body);
   } finally {
     // Only the conversation created by this invocation is eligible for cleanup.
-    // Failed cleanup must not discard a successful quota measurement.
-    await client.request(route + '/' + uuid, { method: 'DELETE' }).catch(() => {});
+    // The long-lived helper finishes cleanup in the background; a slow DELETE
+    // must not delay or discard a successful measurement (or the original error).
+    void Promise.resolve().then(() => client.request(route + '/' + uuid, { method: 'DELETE' }))
+      .then(response => response?.body?.cancel()).catch(() => {});
   }
 }
 

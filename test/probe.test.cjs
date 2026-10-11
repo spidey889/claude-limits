@@ -46,3 +46,72 @@ test('probe refuses to send a message if Claude does not confirm temporary mode'
   await assert.rejects(probeQuota(client), /temporary probe/);
   assert.deepEqual(calls, ['POST', 'DELETE']);
 });
+
+const completeQuota = 'event: message_limit\ndata: {"message_limit":{"windows":{"5h":{"utilization":0.04},"7d":{"utilization":0.16}}}}\n\n';
+
+test('both quota windows return immediately without reading the stream tail', async () => {
+  let closed = false;
+  async function* delayedTail() {
+    try {
+      yield Buffer.from(completeQuota);
+      throw new Error('The stream tail must not be read.');
+    } finally { closed = true; }
+  }
+  const result = await readQuotaStream(delayedTail());
+  assert.equal(result.usage.weekly.percent, 16);
+  assert.equal(closed, true);
+});
+
+test('early quota return cancels an open HTTP response body', { timeout: 2000 }, async () => {
+  let cancelled = false;
+  const body = new ReadableStream({
+    start(controller) { controller.enqueue(Buffer.from(completeQuota)); },
+    cancel() { cancelled = true; },
+  });
+  const result = await readQuotaStream(body);
+  assert.equal(result.usage.fiveHour.percent, 4);
+  assert.equal(cancelled, true);
+  assert.equal(body.locked, false);
+});
+
+test('partial quota continues until both windows arrive', async () => {
+  const result = await readQuotaStream(chunks(
+    'event: message_limit\ndata: {"windows":{"5h":{"utilization":0.03}}}\n\n' + completeQuota));
+  assert.equal(result.usage.fiveHour.percent, 4);
+  assert.equal(result.usage.weekly.percent, 16);
+});
+
+test('a slow or failed cleanup cannot delay a successful reading', async () => {
+  const cleanup = Promise.withResolvers();
+  let settled = false, deletes = 0;
+  const client = { organization: 'test', request: async (route, options) => {
+    if (options.method === 'DELETE') { deletes++; return cleanup.promise; }
+    if (route.endsWith('/completion')) return { body: chunks(completeQuota) };
+    return { json: async () => ({ uuid: JSON.parse(options.body).uuid, is_temporary: true }) };
+  } };
+  const reading = probeQuota(client).then(result => { settled = true; return result; });
+  try {
+    await new Promise(setImmediate);
+    assert.equal(deletes, 1);
+    assert.equal(settled, true, 'A measured quota must return while DELETE is still pending.');
+    assert.equal((await reading).usage.fiveHour.percent, 4);
+  } finally {
+    cleanup.reject(new Error('cleanup failed'));
+    await reading;
+  }
+});
+
+test('a malformed creation response still cleans up only the requested conversation', async () => {
+  const calls = [];
+  const client = { organization: 'test', request: async (route, options) => {
+    calls.push({ route, options });
+    if (options.method === 'DELETE') return {};
+    return { json: async () => { throw new Error('invalid creation response'); } };
+  } };
+  await assert.rejects(probeQuota(client), /invalid creation response/);
+  await new Promise(setImmediate);
+  const uuid = JSON.parse(calls[0].options.body).uuid;
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].route, calls[0].route + '/' + uuid);
+  assert.equal(calls[1].options.method, 'DELETE');
+});

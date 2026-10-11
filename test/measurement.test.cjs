@@ -37,3 +37,69 @@ test('a snapshot write failure cannot discard a real live reading', async () => 
     async () => {}, async () => { throw new Error('read only disk'); });
   assert.equal((await reader()).usage.fiveHour.percent, 8);
 });
+
+test('an empty endpoint is skipped briefly, then checked again for read-only quota', async () => {
+  let endpoints = 0, probes = 0, now = 2000000000000;
+  const reader = createReader({ usage: async () => {
+    endpoints++;
+    return endpoints === 1 ? { fiveHour: null, weekly: null }
+      : { fiveHour: { percent: 12, resetsAt: null }, weekly: null };
+  } }, async () => {
+    probes++;
+    return { usage: { fiveHour: { percent: 8, resetsAt: null }, weekly: null },
+      source: 'reply', observedAt: new Date(now).toISOString() };
+  }, async () => {}, () => now);
+  await reader();
+  now += 11000;
+  assert.equal((await reader()).source, 'reply');
+  assert.equal(endpoints, 1);
+  assert.equal(probes, 2);
+  now += 300000;
+  assert.equal((await reader()).source, 'endpoint');
+  now += 11000;
+  await reader();
+  assert.equal(endpoints, 3);
+  assert.equal(probes, 2);
+});
+
+test('a passed reset invalidates the ten-second reuse window', async () => {
+  let endpoints = 0, now = 2000000000000;
+  const reader = createReader({ usage: async () => {
+    endpoints++;
+    return { fiveHour: { percent: 8, resetsAt: new Date(now + 1000).toISOString() }, weekly: null };
+  } }, async () => {}, async () => {}, () => now);
+  await reader();
+  now += 1000;
+  await reader();
+  assert.equal(endpoints, 2);
+});
+
+test('a backwards clock change invalidates recent-reading reuse', async () => {
+  let endpoints = 0, now = 2000000000000;
+  const reader = createReader({ usage: async () => {
+    endpoints++;
+    return { fiveHour: { percent: 8, resetsAt: null }, weekly: null };
+  } }, async () => {}, async () => {}, () => now);
+  await reader();
+  now -= 1000;
+  await reader();
+  assert.equal(endpoints, 2);
+});
+
+test('a failed scheduled endpoint check does not reuse old readings or spend a probe', async () => {
+  let endpoints = 0, probes = 0, now = 2000000000000;
+  const reader = createReader({ usage: async () => {
+    if (++endpoints > 1) throw new Error('offline');
+    return { fiveHour: null, weekly: null };
+  } }, async () => {
+    probes++;
+    return { usage: { fiveHour: { percent: 8, resetsAt: null }, weekly: null },
+      source: 'reply', observedAt: new Date(now).toISOString() };
+  }, async () => {}, () => now);
+  await reader();
+  now += 300000;
+  await assert.rejects(reader(), /offline/);
+  assert.equal(probes, 1);
+  await assert.rejects(reader(), /offline/);
+  assert.equal(endpoints, 3);
+});
