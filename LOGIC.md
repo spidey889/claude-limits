@@ -22,7 +22,7 @@ Watch reads every five minutes only while its command is running. The helper doe
 
 Claude output keeps two quota rows plus the checked timestamp. Output leads with the measured percent used, formatted to one decimal at most. Ten spaced solid/hollow squares show used/unused portions, rounded to the nearest cell. Unknown percentages have no bar. Only bar fill is capped at 100%; over-limit percentages remain exact. Passed resets remain flagged rather than implying replenished allowance. The same formatter serves one-shot and watch output, without extra requests or dependencies.
 
-On a TTY with Node's detected color support, used allowance is bold green below 50%, amber from 50%, and red from 80%. Passed resets use amber for the reading and warning. Hollow unused cells use bright neutral text for visibility; future reset times and the checked timestamp use quieter gray. Text and shapes carry the same meaning without color. Color detection honors `NO_COLOR` and `NODE_DISABLE_COLORS`; redirected output has no ANSI styling.
+On a TTY with Node's detected color support, used allowance is bold purple below 50%, amber from 50%, and red from 80%. Passed resets use amber for the reading and warning. Hollow unused cells use bright neutral text for visibility; future reset times and the checked timestamp use quieter gray. Text and shapes carry the same meaning without color. Color detection honors `NO_COLOR` and `NODE_DISABLE_COLORS`; redirected output has no ANSI styling.
 
 ## Codex
 

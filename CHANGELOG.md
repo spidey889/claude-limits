@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- Changed normal Claude usage highlights to purple at the user's request; amber/red warnings, bright unused cells, and plain output stay consistent.
+
 - Replaced the crowded dotted usage bars after visual feedback: Claude leads with percent used and uses ten spaced solid/hollow cells for used/unused allowance. The user preferred used percentages, so the final display keeps that meaning and makes unused cells bright and clearly outlined. Removed bar brackets, colons, and vertical separators; reset times and the checked time are secondary. Terminal color highlights usage and warns when it is high, with plain output for redirection or disabled color. Fresh-reading behavior stays intact.
 - Verified the clearer display with 27 Claude checks and live colored/plain terminal output.
 - Added compact, aligned 12-cell usage bars to Claude's two quota rows, preserving exact percent-used values, reset times, and the checked timestamp. Unknown usage has no bar; only visual fill is capped for over-limit readings. The display uses the existing formatter in one-shot and watch modes, adding no requests or dependencies.

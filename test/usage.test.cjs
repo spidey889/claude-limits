@@ -64,7 +64,7 @@ test('color adds emphasis without changing the readable text or column alignment
   const usage = parseUsage({ five_hour: { utilization: 26 }, seven_day: { utilization: 99 } });
   const plain = formatUsage(usage);
   const colored = formatUsage(usage, Date.now(), { color: true });
-  assert.match(colored, /\x1b\[1;92m/);
+  assert.match(colored, /\x1b\[1;95m/);
   assert.match(colored, /\x1b\[1;91m/);
   assert.equal(stripVTControlCharacters(colored), plain);
   assert.doesNotMatch(plain, /\x1b|░/);
