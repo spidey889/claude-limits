@@ -2,6 +2,7 @@
 
 ## 2026-10-11
 
+- Changed normal Codex highlights to custom coral orange (`#FF9966`) so they stand apart from PowerShell's yellow command text. Low-allowance and stale-reset warnings retain their colors; plain output stays identical.
 - Changed the normal Codex accent to yellow instead of green; low remaining allowance stays red. Updated current documentation and the color check.
 - Replaced the crowded quota lines with Claude's aligned ten-cell square bars, leading with percent left. Filled cells show remaining allowance, highlighted green, amber, or red as allowance runs low. Reset text is compact, weekly dates stay visible, and cache labels are secondary. Missing values, stale-reset warnings, and plain redirected output remain explicit. Passed 41 checks, including remaining-bar rounding and color/plain equivalence.
 - Renamed the command to `codexli` and retired `codex-limits`. Installation removes recognized old launchers from the merged module and original standalone folder while preserving other files. Updated command-resolution and migration checks, including unrelated-launcher preservation. Offline cached readings keep the same two-line output.

@@ -67,7 +67,7 @@ Codex prints exactly two lines from the newest saved account rate-limit observat
 Weekly    85% left   ■ ■ ■ ■ ■ ■ ■ ■ ■ □   resets Sun 18 Oct 12:11 PM   cached
 ```
 
-A supported terminal uses yellow for remaining allowance and red below 20% left. Reset times and the short **cached** label stay secondary. `NO_COLOR` disables color; redirected output stays plain. Cached observations may be out of date. Passed resets say `reset passed; refresh required`; the command never assumes your allowance is back to 100%. Use Codex normally to record a newer observation, then run it again.
+A supported terminal uses coral orange (`#FF9966`) for remaining allowance and red below 20% left. Reset times and the short **cached** label stay secondary. `NO_COLOR` disables color; redirected output stays plain. Cached observations may be out of date. Passed resets say `reset passed; refresh required`; the command never assumes your allowance is back to 100%. Use Codex normally to record a newer observation, then run it again.
 
 It reads only `~/.codex/sessions` and `~/.codex/archived_sessions`, or those folders under `CODEX_HOME`. It makes no network requests, sends no messages, reads no authentication files, and saves no data. Reset times use the computer's local timezone; weekly resets also show the date. Switching Codex accounts can leave a snapshot from the previous account until a newer observation is recorded.
 

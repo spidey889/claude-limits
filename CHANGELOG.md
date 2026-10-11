@@ -2,6 +2,7 @@
 
 ## 2026-10-11
 
+- Replaced Codex's yellow accent with custom coral orange (`#FF9966`) after feedback that yellow blended with PowerShell command text. True-color styling affects only normal remaining values and filled cells; red low-allowance warnings, stale-reset warnings, and plain output remain intact.
 - Changed Codex's normal accent from green to yellow at the user's request, retaining red below 20% left. Updated current documentation and the existing color check.
 - Matched Codex's display to Claude's spaced square bars while keeping percent left as its main value. Solid cells show remaining allowance, with green for healthy allowance and amber/red as it runs low. Compact local reset times, a weekly date, and a quieter `cached` label replace the long timestamp and repeated cache warning. Passed resets still require refresh, and redirected or color-disabled output stays plain.
 - Validation: 41 Codex checks passed, including fractional remaining allowance, half-cell rounding, color/plain equivalence, stale resets, missing data, and existing command/installer behavior.

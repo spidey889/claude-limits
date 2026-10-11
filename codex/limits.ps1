@@ -95,7 +95,8 @@ function Format-LimitLine([string]$Label, [int]$Minutes, $Snapshot, [bool]$Color
 
     # Codex fills remaining allowance; Claude fills used allowance. The label
     # keeps this distinction explicit. Round half-cells up, matching Claude.
-    $code = if ($resetPassed) { '93' } elseif ($left -lt 20) { '91' } else { '93' }
+    # A custom coral accent stays distinct from PowerShell's yellow command text.
+    $code = if ($resetPassed) { '93' } elseif ($left -lt 20) { '91' } else { '38;2;255;153;102' }
     $filled = [int][Math]::Round($left / 10, [MidpointRounding]::AwayFromZero)
     $cells = for ($index = 0; $index -lt 10; $index++) {
         # Character codes keep the script ASCII-safe in Windows PowerShell 5.1.

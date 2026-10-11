@@ -6,7 +6,7 @@ The independent offline Codex command in the [combined repository](../README.md)
 codexli
 ```
 
-It prints exactly two lines, with saved 5-hour and weekly **percent left** first, followed by ten spaced squares and a compact reset time. Solid squares show allowance remaining; hollow squares show allowance used. Yellow highlights remaining allowance, switching to red below 20% left. Reset times and the short **cached** label stay secondary. `NO_COLOR` disables styling; redirected output is plain.
+It prints exactly two lines, with saved 5-hour and weekly **percent left** first, followed by ten spaced squares and a compact reset time. Solid squares show allowance remaining; hollow squares show allowance used. Coral orange (`#FF9966`) highlights remaining allowance, switching to red below 20% left. Reset times and the short **cached** label stay secondary. `NO_COLOR` disables styling; redirected output is plain.
 
 ```text
 5h         5% left   ■ □ □ □ □ □ □ □ □ □   resets Sun 5:11 PM   cached
