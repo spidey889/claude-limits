@@ -6,10 +6,10 @@ The independent offline Codex command in the [combined repository](../README.md)
 codexli
 ```
 
-It prints exactly two lines, with saved 5-hour and weekly **percent left** first, followed by ten spaced squares and a compact reset time. Solid squares show allowance remaining; hollow squares show allowance used. Coral orange (`#FF9966`) highlights remaining allowance, switching to red below 20% left. Reset times and the short **cached** label stay secondary. `NO_COLOR` disables styling; redirected output is plain.
+It prints exactly two lines, with saved 5-hour and weekly **percent left** first, followed by ten spaced squares and a compact reset time. Solid squares show allowance remaining; hollow squares show allowance used. Ruby red (`#FF4F55`) highlights remaining allowance. Below 20% left, a bold amber `LOW` label after the bar distinguishes the warning from the normal accent, including a plain label without color. Reset times and the short **cached** label stay secondary. `NO_COLOR` disables styling; redirected output is plain.
 
 ```text
-5h         5% left   ■ □ □ □ □ □ □ □ □ □   resets Sun 5:11 PM   cached
+5h         5% left   ■ □ □ □ □ □ □ □ □ □   LOW   resets Sun 5:11 PM   cached
 Weekly    85% left   ■ ■ ■ ■ ■ ■ ■ ■ ■ □   resets Sun 18 Oct 12:11 PM   cached
 ```
 

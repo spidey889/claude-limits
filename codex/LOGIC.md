@@ -32,7 +32,9 @@
   remaining/used allowance. Fill rounds to the nearest cell, with half-cells rounded
   up. This matches Claude's layout while keeping Codex's remaining-allowance meaning.
 - On a non-redirected console supporting virtual-terminal styling (including Windows
-  Terminal), allowance is bold coral orange (`#FF9966`, ANSI true color), switching to red below 20% left.
+  Terminal), allowance is bold ruby red (`#FF4F55`, ANSI true color). Below 20% left,
+  a bold amber `LOW` label after the bar makes scarce allowance distinct without
+  shifting the percentage or bar. The label remains visible without color.
   Passed resets use yellow. Hollow cells are bright neutral text; future resets
   and cache labels are quieter gray. `NO_COLOR`, `NODE_DISABLE_COLORS`, dumb terminals,
   and redirected output disable styling. Square glyphs use character codes so the

@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- Applied the user's selected ruby red (`#FF4F55`) from the color preview to Codex percentages and filled bars. Because the normal accent is red, allowance below 20% gets an explicit amber `LOW` label that remains visible in plain output. Preserved percent-left alignment, the two-line layout, cached observations, and stale-reset behavior.
+- Validation: 42 Codex checks passed, including the selected RGB color, distinct low-allowance warning, and its plain-output equivalent. The installed command was verified from another folder.
 - Replaced Codex's yellow accent with custom coral orange (`#FF9966`) after feedback that yellow blended with PowerShell command text. True-color styling affects only normal remaining values and filled cells; red low-allowance warnings, stale-reset warnings, and plain output remain intact.
 - Changed Codex's normal accent from green to yellow at the user's request, retaining red below 20% left. Updated current documentation and the existing color check.
 - Matched Codex's display to Claude's spaced square bars while keeping percent left as its main value. Solid cells show remaining allowance, with green for healthy allowance and amber/red as it runs low. Compact local reset times, a weekly date, and a quieter `cached` label replace the long timestamp and repeated cache warning. Passed resets still require refresh, and redirected or color-disabled output stays plain.

@@ -95,15 +95,17 @@ function Format-LimitLine([string]$Label, [int]$Minutes, $Snapshot, [bool]$Color
 
     # Codex fills remaining allowance; Claude fills used allowance. The label
     # keeps this distinction explicit. Round half-cells up, matching Claude.
-    # A custom coral accent stays distinct from PowerShell's yellow command text.
-    $code = if ($resetPassed) { '93' } elseif ($left -lt 20) { '91' } else { '38;2;255;153;102' }
+    $code = if ($resetPassed) { '93' } else { '38;2;255;79;85' }
+    # Ruby is also warning-colored: an explicit LOW label distinguishes scarce
+    # allowance even with color disabled, without moving the percentage or bar.
+    $warning = if ($left -lt 20) { '   ' + (Paint-LimitText 'LOW' '1;93' $Color) } else { '' }
     $filled = [int][Math]::Round($left / 10, [MidpointRounding]::AwayFromZero)
     $cells = for ($index = 0; $index -lt 10; $index++) {
         # Character codes keep the script ASCII-safe in Windows PowerShell 5.1.
         if ($index -lt $filled) { Paint-LimitText ([string][char]0x25A0) $code $Color }
         else { Paint-LimitText ([string][char]0x25A1) '37' $Color }
     }
-    return $heading + (Paint-LimitText $remaining.PadLeft(10) ('1;' + $code) $Color) + '   ' + ($cells -join ' ') + $suffix
+    return $heading + (Paint-LimitText $remaining.PadLeft(10) ('1;' + $code) $Color) + '   ' + ($cells -join ' ') + $warning + $suffix
 }
 
 $snapshot = $null

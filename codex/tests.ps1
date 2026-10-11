@@ -60,14 +60,16 @@ try {
     $null = . (Join-Path $project 'limits.ps1') -CodexHome $testRoot
     $displaySnapshot = [pscustomobject]@{ Limits = $newer.payload.rate_limits }
     $colored = Format-LimitLine '5h' 300 $displaySnapshot $true
-    Assert ($colored.Contains(([string][char]27 + '[1;38;2;255;153;102m87.5% left'))) 'Remaining allowance is not highlighted in coral orange.'
+    Assert ($colored.Contains(([string][char]27 + '[1;38;2;255;79;85m87.5% left'))) 'Remaining allowance is not highlighted in the selected ruby red.'
     Assert (($colored -replace '\x1b\[[0-9;]+m', '') -eq $output[0]) 'Color changed the displayed values or layout.'
     $low = New-Event $now 95
     $lowSnapshot = [pscustomobject]@{ Limits = $low.payload.rate_limits }
     $lowPlain = Format-LimitLine '5h' 300 $lowSnapshot
     $lowColored = Format-LimitLine '5h' 300 $lowSnapshot $true
     Assert ($lowPlain -like ("5h*5% left   $solid " + ((@($hollow) * 9) -join ' ') + '*')) 'Five percent left should show one solid cell, rather than appearing empty.'
-    Assert ($lowColored.Contains(([string][char]27 + '[1;91m   5% left'))) 'Low remaining allowance is not highlighted in red.'
+    Assert ($lowColored.Contains(([string][char]27 + '[1;38;2;255;79;85m   5% left')) -and
+        $lowColored.Contains(([string][char]27 + '[1;93mLOW'))) 'Low allowance lost the selected ruby color or its distinct warning.'
+    Assert ($lowPlain -like '*   LOW   resets*' -and $output[0] -notlike '*LOW*') 'The low-allowance warning is missing in plain output or appears for healthy allowance.'
 
     $wrongBucket = New-Event $now.AddSeconds(-10) 99 99 $future 'codex_other'
     $quoted = @{ timestamp = $now.ToString('o'); type = 'response_item'; payload = $wrongBucket.payload }

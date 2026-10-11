@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- Applied the selected ruby red (`#FF4F55`) to remaining percentages and filled cells. Below 20% left, an amber `LOW` label distinguishes the warning from normal red styling and remains present without color. The two quota rows, alignment, and cached-reading semantics remain intact.
+- Passed 42 module checks and verified the installed command from another folder, including the selected color and explicit low-allowance warning.
 - Changed normal Codex highlights to custom coral orange (`#FF9966`) so they stand apart from PowerShell's yellow command text. Low-allowance and stale-reset warnings retain their colors; plain output stays identical.
 - Changed the normal Codex accent to yellow instead of green; low remaining allowance stays red. Updated current documentation and the color check.
 - Replaced the crowded quota lines with Claude's aligned ten-cell square bars, leading with percent left. Filled cells show remaining allowance, highlighted green, amber, or red as allowance runs low. Reset text is compact, weekly dates stay visible, and cache labels are secondary. Missing values, stale-reset warnings, and plain redirected output remain explicit. Passed 41 checks, including remaining-bar rounding and color/plain equivalence.
