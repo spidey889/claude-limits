@@ -2,6 +2,7 @@
 
 ## 2026-10-11
 
+- Added compact, aligned 12-cell usage bars to Claude's two quota rows, preserving exact percent-used values, reset times, and the checked timestamp. Unknown usage has no bar; only visual fill is capped for over-limit readings. The display uses the existing formatter in one-shot and watch modes, adding no requests or dependencies.
 - Reduced fresh Claude-check latency by remembering an empty usage endpoint for five minutes, returning as soon as both streamed quota windows arrive, and moving temporary-conversation cleanup off the response path. Read-only endpoint support is checked again after the five-minute interval.
 - Kept the ten-second duplicate-probe guard, while invalidating reuse when a quota reset passes or the system clock moves backwards. Failed live checks never fall back to saved quota.
 - Added regressions for endpoint rechecks, reset boundaries, delayed reply tails, partial quota events, slow or failed cleanup, and malformed creation responses. No completion retries or new dependencies were added.

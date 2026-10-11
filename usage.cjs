@@ -49,7 +49,11 @@ function formatUsage(usage, now = Date.now()) {
       parts.push(reset.getTime() <= now ? 'reset time passed; refresh required'
         : 'resets ' + reset.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }));
     }
-    return label + ': ' + parts.join(' | ');
+    if (value.percent === null) return label + ': ' + parts.join(' | ');
+    // Clamp only the visual fill: an over-limit reading still shows its exact percent.
+    const width = 12, filled = Math.round(Math.min(value.percent, 100) * width / 100);
+    const bar = '[' + '█'.repeat(filled) + '░'.repeat(width - filled) + ']';
+    return (label + ':').padEnd(8) + bar + ' ' + parts.join(' | ');
   }
   return [line('5h', usage.fiveHour), line('Weekly', usage.weekly)].join('\n');
 }

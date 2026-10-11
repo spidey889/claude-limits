@@ -38,6 +38,16 @@ claudeli --stop
 
 `claudeli` fetches real usage. Watch refreshes every five minutes; Ctrl+C stops watching. `--stop` forgets the helper's in-memory session.
 
+Usage has compact 12-cell bars that fill as **percent used** increases. The exact percentage and reset time stay beside each bar, with the checked time below:
+
+```text
+5h:     [███░░░░░░░░░] 26% used | resets Sun 5:10 PM
+Weekly: [░░░░░░░░░░░░] 1% used | resets Sun 11:30 AM
+Checked 1:07:20 PM
+```
+
+Bar fill is rounded to the nearest cell; small values can show an empty bar. Unavailable percentages show no bar.
+
 To keep fresh checks fast, the helper skips an empty read-only endpoint for five minutes after confirming it exposes neither window, returns as soon as both quota windows arrive, and deletes the temporary conversation in the background. Checks within ten seconds reuse the latest measurement unless a reset has passed. Older saved snapshots never replace failed live checks. Claude's network and reply time still affect fresh reads.
 
 **Free-plan refreshes use allowance.** On the tested free account, Claude's read-only usage endpoint exposes no numbers. The fallback sends `Reply with a single dot.` in a new temporary conversation, reads its exact quota event, and attempts to delete that conversation. Earlier probe messages never accumulate as context. A running watch may send up to 12 tiny probes per hour. Missing data is reported rather than estimated.

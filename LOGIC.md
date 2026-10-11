@@ -20,6 +20,8 @@ Each probe confirms temporary mode before sending. Completions are never automat
 
 Watch reads every five minutes only while its command is running. The helper does not poll independently. `.usage-snapshot.json` stores only measured usage and timestamps; `.runtime-key` stores a random local pipe token. Saved readings are diagnostic, never substituted for failed live requests. Reconnect after account changes because the helper is bound to the Desktop account active at connection time. Authenticated HTTP redirects are blocked.
 
+Claude output keeps two quota rows plus the checked timestamp. Each known percentage has an aligned 12-cell block bar showing percent used, rounded to the nearest cell, followed by its exact percentage and reset time. Visual fill is capped at 100%; the displayed percentage is not capped. Unavailable percentages have no bar. The same formatter serves one-shot and watch output, without extra requests or terminal dependencies.
+
 ## Codex
 
 `codex/codex-limits.cmd` invokes Windows PowerShell 5.1 without a profile, targeting `limits.ps1` by its own absolute folder. Its implementation filename avoids PowerShell selecting a policy-blocked `codex-limits.ps1`.
