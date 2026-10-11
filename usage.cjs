@@ -56,7 +56,9 @@ function formatUsage(usage, now = Date.now(), { color = false } = {}) {
     if (value.percent === null) return heading + 'usage not exposed' + suffix;
     // Clamp only visual fill: an over-limit reading still shows its exact percent.
     // Bright hollow cells keep the unused portion visible beside the used cells.
-    const code = resetPassed ? 93 : value.percent < 50 ? 95 : value.percent < 80 ? 93 : 91;
+    // Keep Claude's accepted purple identity at every usage level. Reset
+    // warnings stay separate so stale readings do not recolor the quota bar.
+    const code = 95;
     const filled = Math.round(Math.min(value.percent, 100) / 10);
     const bar = Array.from({ length: 10 }, (_, index) => paint(index < filled ? '■' : '□', index < filled ? code : 37)).join(' ');
     const percent = (Number(value.percent.toFixed(1)) + '% used').padStart(10);

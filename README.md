@@ -46,7 +46,7 @@ Weekly     1% used   □ □ □ □ □ □ □ □ □ □   resets Sun 11:30 
 Checked 1:07:20 PM
 ```
 
-Each bar has ten spaced cells, rounded to the nearest cell. A supported terminal uses purple below 50% used, amber from 50%, and red from 80%, with quieter reset times. `NO_COLOR` disables color; redirected output stays plain. Unknown percentages have no bar. Over-limit percentages stay exact while their bars are capped at full. Passed resets remain flagged and never imply replenished allowance.
+Each bar has ten spaced cells, rounded to the nearest cell. A supported terminal always uses purple for used percentages and filled cells, including high usage and passed resets. Reset times stay quieter, with amber text for a passed-reset warning. `NO_COLOR` disables color; redirected output stays plain. Unknown percentages have no bar. Over-limit percentages stay exact while their bars are capped at full. Passed resets remain flagged and never imply replenished allowance.
 
 To keep fresh checks fast, the helper skips an empty read-only endpoint for five minutes after confirming it exposes neither window, returns as soon as both quota windows arrive, and deletes the temporary conversation in the background. Checks within ten seconds reuse the latest measurement unless a reset has passed. Older saved snapshots never replace failed live checks. Claude's network and reply time still affect fresh reads.
 

@@ -59,13 +59,20 @@ test('used allowance stays exact even when the visual bar reaches capacity', () 
   assert.doesNotMatch(formatUsage(parseUsage({ five_hour: { resets_at: '2030-01-01T10:00:00Z' } })), /0% used/);
 });
 
-test('color adds emphasis without changing the readable text or column alignment', () => {
+test('purple stays constant across usage levels and passed resets without changing text or alignment', () => {
   const { stripVTControlCharacters } = require('node:util');
-  const usage = parseUsage({ five_hour: { utilization: 26 }, seven_day: { utilization: 99 } });
-  const plain = formatUsage(usage);
-  const colored = formatUsage(usage, Date.now(), { color: true });
-  assert.match(colored, /\x1b\[1;95m/);
-  assert.match(colored, /\x1b\[1;91m/);
-  assert.equal(stripVTControlCharacters(colored), plain);
-  assert.doesNotMatch(plain, /\x1b|░/);
+  const usages = [
+    parseUsage({ five_hour: { utilization: 26 }, seven_day: { utilization: 99 } }),
+    ...[0, 50, 60, 80, 100, 127.5].map(utilization => parseUsage({ five_hour: { utilization } })),
+    parseUsage({ five_hour: { utilization: 75, resets_at: '2020-01-01T10:00:00Z' } }),
+  ];
+  const now = Date.now();
+  for (const usage of usages) {
+    const plain = formatUsage(usage, now);
+    const colored = formatUsage(usage, now, { color: true });
+    assert.match(colored, /\x1b\[1;95m/);
+    assert.doesNotMatch(colored, /\x1b\[1;(?:91|93)m/);
+    assert.equal(stripVTControlCharacters(colored), plain);
+    assert.doesNotMatch(plain, /\x1b|░/);
+  }
 });

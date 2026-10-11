@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- Kept Claude's original purple accent constant at every usage level, as requested after it switched to yellow at 50% used. Removed automatic amber/red quota styling, including the passed-reset override on percentages and filled cells. Reset warnings remain explicit in amber text; the layout, plain output, and usage-checking behavior stay intact.
+- Validation: 27 Claude tests passed, covering the former color thresholds, over-limit values, passed resets, and color/plain equivalence. Offline terminal previews at 50%, 60%, and 90% used stayed purple without requesting account usage.
 - Applied the user's selected ruby red (`#FF4F55`) from the color preview to Codex percentages and filled bars. Because the normal accent is red, allowance below 20% gets an explicit amber `LOW` label that remains visible in plain output. Preserved percent-left alignment, the two-line layout, cached observations, and stale-reset behavior.
 - Validation: 42 Codex checks passed, including the selected RGB color, distinct low-allowance warning, and its plain-output equivalent. The installed command was verified from another folder.
 - Replaced Codex's yellow accent with custom coral orange (`#FF9966`) after feedback that yellow blended with PowerShell command text. True-color styling affects only normal remaining values and filled cells; red low-allowance warnings, stale-reset warnings, and plain output remain intact.
