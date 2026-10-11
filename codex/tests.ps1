@@ -32,7 +32,7 @@ function Save-Events([string]$Name, $Events) {
 }
 
 function Run-Limits {
-    $output = @(& (Join-Path $project 'codex-limits.cmd') -CodexHome $testRoot 2>&1)
+    $output = @(& (Join-Path $project 'codexli.cmd') -CodexHome $testRoot 2>&1)
     Assert ($output.Count -eq 2) 'The command must emit exactly two lines, including errors.'
     Assert ($output[0] -is [string] -and $output[1] -is [string]) 'Unexpected error output.'
     return $output
@@ -96,25 +96,32 @@ try {
     $env:Path = $project + ';' + $env:Path
     $env:CODEX_HOME = $testRoot
     Push-Location $env:USERPROFILE
-    try { $output = @(codex-limits 2>&1) } finally { Pop-Location }
+    try { $output = @(codexli 2>&1) } finally { Pop-Location }
     Assert ($output.Count -eq 2 -and $output[0] -like '5-hour: 75% left*') 'Bare command failed from another folder or ignored CODEX_HOME.'
 
     foreach ($missingRoot in @((Join-Path $testRoot 'absent'), '\\127.0.0.1\never-contact-this-share')) {
-        $output = @(& (Join-Path $project 'codex-limits.cmd') -CodexHome $missingRoot 2>&1)
+        $output = @(& (Join-Path $project 'codexli.cmd') -CodexHome $missingRoot 2>&1)
         Assert ($output.Count -eq 2 -and $output[0] -eq '5-hour: unavailable | resets unavailable (no local rate-limit data)' -and
             $output[1] -eq 'Weekly: unavailable | resets unavailable (no local rate-limit data)') 'Missing or non-local data emitted extra output.'
     }
     # Exercise migration without writing the owner's registry PATH.
     $previousFolder = Join-Path $testRoot 'old-codex-limits'
     $unrelatedFolder = Join-Path $testRoot 'unrelated-tool'
+    $null = New-Item -ItemType Directory -Path $previousFolder
+    $legacyLauncher = Join-Path $previousFolder 'codex-limits.cmd'
+    Copy-Item -LiteralPath (Join-Path $project 'codexli.cmd') -Destination $legacyLauncher
     $env:Path = $previousFolder + ';' + $unrelatedFolder + ';' + $project + ';' + $originalPath
     $null = & (Join-Path $project 'install.ps1') -PathScope Process -PreviousFolder $previousFolder
     Assert (($env:Path -split ';') -notcontains $previousFolder) 'The old standalone PATH entry survived migration.'
     Assert ((@($env:Path -split ';' | Where-Object { $_ -eq $project })).Count -eq 1) 'The merged command folder is missing or duplicated.'
     Assert (($env:Path -split ';') -contains $unrelatedFolder) 'Installation removed an unrelated PATH entry.'
-    Assert ((Get-Command codex-limits).Source -eq (Join-Path $project 'codex-limits.cmd')) 'The global command still resolves to the old folder.'
+    Assert ((Get-Command codexli).Source -eq (Join-Path $project 'codexli.cmd')) 'The global command still resolves to the old folder.'
+    Assert (-not (Test-Path -LiteralPath $legacyLauncher)) 'The recognized standalone launcher survived migration.'
+    Assert (-not (Test-Path -LiteralPath (Join-Path $project 'codex-limits.cmd'))) 'The old launcher remains in the installed module.'
     $installedPath = $env:Path
+    Set-Content -LiteralPath $legacyLauncher -Value '@echo unrelated tool' -Encoding ascii
     $null = & (Join-Path $project 'install.ps1') -PathScope Process -PreviousFolder $previousFolder
+    Assert (Test-Path -LiteralPath $legacyLauncher) 'Installation deleted an unrelated launcher.'
     Assert ($env:Path -eq $installedPath) 'Repeating installation changed or duplicated PATH entries.'
     $null = & (Join-Path $project 'install.ps1') -Uninstall -PathScope Process -PreviousFolder $previousFolder
     Assert (($env:Path -split ';') -notcontains $project) 'Uninstall left the merged command folder in PATH.'

@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-10-11
+
+- Renamed the command to `codexli` and retired `codex-limits`. Installation removes recognized old launchers from the merged module and original standalone folder while preserving other files. Updated command-resolution and migration checks, including unrelated-launcher preservation. Offline cached readings keep the same two-line output.
+- Passed 36 module checks and 27 Claude tests through the combined suite. The installed `codexli` worked from another folder in 0.97 seconds, and both old launchers were removed.
+
 ## 2026-09-30
 
 - Added an offline two-line PowerShell command for saved Codex 5-hour and weekly limits.

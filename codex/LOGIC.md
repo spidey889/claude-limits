@@ -1,15 +1,18 @@
 # Current behavior
 
-- `codex-limits.cmd` starts Windows PowerShell 5.1 with no profile and runs
+- `codexli.cmd` provides the `codexli` command, starts Windows PowerShell 5.1 with no profile, and runs
   `limits.ps1` using its own absolute folder. This works independently of the caller's
   folder and avoids installing PowerShell profile functions. The implementation has a
-  different filename so PowerShell cannot select a policy-blocked `codex-limits.ps1`
+  different filename so PowerShell cannot select a policy-blocked `codexli.ps1`
   instead of the launcher.
-- The only installation change outside this folder is the user's PATH setting.
+- Installation updates the user's PATH and removes recognized old `codex-limits.cmd`
+  launchers from the current and previous folders. Only normalized content matches
+  qualify for deletion; remaining source files and unrelated launchers are preserved.
   `install.ps1` is repeatable and supports `-Uninstall`; it preserves unrelated entries
   and migrates the previous standalone Desktop PATH entry. `-PathScope Process`
   enables installer checks without changing the user registry. The root repository
   installer can select this module or install it alongside the separate Claude tool.
+- The old `codex-limits` command is retired; no compatibility alias is installed.
 - `limits.ps1` reads JSONL files under `CODEX_HOME/sessions` and `archived_sessions`,
   defaulting to the user's `.codex`. UNC roots are refused to avoid file-server traffic.
 - Only actual `event_msg` / `token_count` events with non-null `rate_limits` for

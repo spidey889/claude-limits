@@ -5,7 +5,7 @@ Two separate Windows commands in one repository:
 | Command | Shows | Source |
 | --- | --- | --- |
 | `claudeli` | Claude 5-hour and weekly **percent used**, plus reset times | A fresh usage request, or a tiny message probe |
-| `codex-limits` | Codex 5-hour and weekly **percent left**, plus reset times | Saved local observations, always marked cached |
+| `codexli` | Codex 5-hour and weekly **percent left**, plus reset times | Saved local observations, always marked cached |
 
 The commands keep their own implementations, account data, and behavior. Codex does not use Claude's session helper or message probes.
 
@@ -24,7 +24,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Tool Claude
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Tool Codex
 ```
 
-Claude requires Node.js 22.13+ with `node:sqlite`. Codex requires only Windows PowerShell 5.1; it has no Node or CLI dependency. Reopen PowerShell after installation to receive the updated user PATH. The Codex installer replaces the old `%USERPROFILE%\Desktop\codex-limits` PATH entry with this repository's `codex` folder, preserving unrelated entries and leaving the original source folder intact.
+Claude requires Node.js 22.13+ with `node:sqlite`. Codex requires only Windows PowerShell 5.1; it has no Node or CLI dependency. Reopen PowerShell after installation to receive the updated user PATH. The Codex installer replaces the old `%USERPROFILE%\Desktop\codex-limits` PATH entry with this repository's `codex` folder and removes recognized old `codex-limits.cmd` launchers. Unrelated PATH entries and the remaining original source files are preserved.
 
 ## Claude
 
@@ -57,7 +57,7 @@ Cookies are unlocked locally through Windows DPAPI and remain in memory. Authent
 ## Codex
 
 ```powershell
-codex-limits
+codexli
 ```
 
 Codex prints exactly two lines from the newest saved account rate-limit observation. Every reading says **cached; may be out of date**. Passed reset times are explicitly flagged; the command never assumes your allowance is back to 100%. Use Codex normally to record a newer observation, then run it again.

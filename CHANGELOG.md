@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- Renamed the offline Codex command from `codex-limits` to `codexli`. Replaced the tracked launcher and updated installer messages, checks, and current documentation. Installation removes recognized old launchers in the module and original Desktop folder, preserving other files. Cached-reading behavior and the two-line output stay intact.
+- Validation: 36 Codex checks and 27 Claude tests passed. Installed `codexli` resolved from another folder and read local cached limits in 0.97 seconds; the old command no longer resolved and both recognized old launchers were absent.
 - Changed normal Claude usage highlights to purple at the user's request; amber/red warnings, bright unused cells, and plain output stay consistent.
 
 - Replaced the crowded dotted usage bars after visual feedback: Claude leads with percent used and uses ten spaced solid/hollow cells for used/unused allowance. The user preferred used percentages, so the final display keeps that meaning and makes unused cells bright and clearly outlined. Removed bar brackets, colons, and vertical separators; reset times and the checked time are secondary. Terminal color highlights usage and warns when it is high, with plain output for redirection or disabled color. Fresh-reading behavior stays intact.

@@ -3,7 +3,7 @@
 The independent offline Codex command in the [combined repository](../README.md).
 
 ```powershell
-codex-limits
+codexli
 ```
 
 It prints exactly two lines: saved 5-hour and weekly **percent left** and reset time. Every reading is marked **cached; may be out of date**. A past reset is explicitly flagged; missing fields say `unavailable`. The command never guesses your post-reset allowance. Use Codex normally to record a newer observation, then run it again.
@@ -24,7 +24,7 @@ Or run this module's installer directly from its folder:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-Only this module folder is added to user PATH. The previous `%USERPROFILE%\Desktop\codex-limits` PATH entry is removed during migration; its source files remain intact. Unrelated PATH entries and PowerShell profiles are preserved. Reopen PowerShell after installation. To remove the Codex PATH entries, run this module's installer with `-Uninstall`.
+Only this module folder is added to user PATH. `codexli` replaces the old `codex-limits` command. The previous `%USERPROFILE%\Desktop\codex-limits` PATH entry is removed during migration. Old `codex-limits.cmd` launchers in this module and the previous folder are removed only when they match this tool's launcher; remaining source files and unrelated launchers are preserved. Unrelated PATH entries and PowerShell profiles are preserved. Reopen PowerShell after installation. To remove the Codex PATH entries, run this module's installer with `-Uninstall`.
 
 Requires Windows PowerShell 5.1, with no Node, administrator rights, dependencies, or CLI installation. `Bypass` affects only the installer process, not the saved execution policy.
 

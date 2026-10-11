@@ -8,6 +8,19 @@ $ErrorActionPreference = 'Stop'
 $folder = [IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\')
 $previous = [IO.Path]::GetFullPath($PreviousFolder).TrimEnd('\')
 
+if (-not $Uninstall) {
+    # Overlay upgrades and the standalone install may leave the old launcher.
+    # Only copies matching our launcher are eligible for cleanup.
+    $launcher = [IO.File]::ReadAllText((Join-Path $folder 'codexli.cmd')).Replace("`r`n", "`n").Trim()
+    foreach ($legacyFolder in @($folder, $previous)) {
+        $legacyLauncher = Join-Path $legacyFolder 'codex-limits.cmd'
+        if (Test-Path -LiteralPath $legacyLauncher -PathType Leaf) {
+            $legacy = [IO.File]::ReadAllText($legacyLauncher).Replace("`r`n", "`n").Trim()
+            if ($legacy -eq $launcher) { Remove-Item -LiteralPath $legacyLauncher }
+        }
+    }
+}
+
 function Update-CodexPath([string]$Value) {
     # Remove only this command's current/previous folders. Keep unrelated PATH
     # entries in their original order, including their original spelling.
@@ -29,4 +42,4 @@ if ($PathScope -eq 'User') {
 }
 $env:Path = Update-CodexPath $env:Path
 if ($Uninstall) { 'Removed Codex Limits from your PATH.' }
-else { 'Installed codex-limits from this repository. Open a new PowerShell window.' }
+else { 'Installed codexli from this repository. Open a new PowerShell window.' }

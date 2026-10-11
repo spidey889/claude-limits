@@ -6,7 +6,7 @@ This repository contains two independent providers. Root Node modules and `test/
 
 Root `install.ps1` installs both providers by default, or selects one with `-Tool Claude` / `-Tool Codex`. `scripts/install-claude.ps1` owns the existing `%USERPROFILE%\.local\bin\claudeli.cmd` launcher. Its target remains root `cli.cjs`, so existing Claude helpers and connections continue working.
 
-`codex/install.ps1` installs its module folder on user PATH, removing only its previous standalone Desktop folder and duplicate current-module entries. It preserves unrelated entries in order. `-Uninstall` removes those Codex entries; `-PathScope Process` enables registry-free installer checks. The old source folder is preserved while installed commands resolve to this repo.
+`codex/install.ps1` installs its module folder on user PATH, removing only its previous standalone Desktop folder and duplicate current-module entries. It preserves unrelated entries in order. Installation removes old `codex-limits.cmd` files from the current and previous folders only when their normalized contents match the new launcher. Remaining old source files and unrelated launchers are preserved. `-Uninstall` removes the Codex PATH entries; `-PathScope Process` enables registry-free installer checks. Installed commands resolve to this repo.
 
 Root `tests.ps1` and `npm test` run both suites. Provider-specific npm scripts allow isolated checks. Test fixtures and Claude runtime files are excluded from Git.
 
@@ -26,7 +26,7 @@ On a TTY with Node's detected color support, used allowance is bold purple below
 
 ## Codex
 
-`codex/codex-limits.cmd` invokes Windows PowerShell 5.1 without a profile, targeting `limits.ps1` by its own absolute folder. Its implementation filename avoids PowerShell selecting a policy-blocked `codex-limits.ps1`.
+`codex/codexli.cmd` provides the `codexli` command and invokes Windows PowerShell 5.1 without a profile, targeting `limits.ps1` by its own absolute folder. Its implementation filename avoids PowerShell selecting a policy-blocked `codexli.ps1`. The old `codex-limits` command is retired.
 
 The command reads JSONL files under `CODEX_HOME/sessions` and `archived_sessions`, defaulting to the user's `.codex`. UNC roots are refused. It accepts only actual `event_msg` / `token_count` events with non-null account `rate_limits` for `limit_id=codex` or legacy absent IDs. Embedded conversation text and model-specific buckets cannot replace account observations. The newest event timestamp wins across active and archived sessions.
 
