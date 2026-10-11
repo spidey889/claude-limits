@@ -47,12 +47,19 @@ function Get-SavedLimits {
     return $latest
 }
 
-function Format-LimitLine([string]$Label, [int]$Minutes, $Snapshot) {
+function Paint-LimitText([string]$Text, [string]$Code, [bool]$Color) {
+    if ($Color) { return [string][char]27 + "[${Code}m" + $Text + [char]27 + '[0m' }
+    return $Text
+}
+
+function Format-LimitLine([string]$Label, [int]$Minutes, $Snapshot, [bool]$Color = $false) {
     $remaining = 'unavailable'
-    $reset = 'unavailable'
-    $note = 'no local rate-limit data'
+    $left = $null
+    $reset = 'reset unavailable'
+    $resetPassed = $false
+    $note = 'no local data'
     if ($Snapshot) {
-        $note = 'cached; may be out of date'
+        $note = 'cached'
         # Match window duration, rather than assuming primary/secondary positions.
         $window = @($Snapshot.Limits.primary, $Snapshot.Limits.secondary) |
             Where-Object { $_ -and $_.window_minutes -eq $Minutes } | Select-Object -First 1
@@ -70,17 +77,37 @@ function Format-LimitLine([string]$Label, [int]$Minutes, $Snapshot) {
             if ([long]::TryParse([string]$window.resets_at, [ref]$seconds) -and $seconds -gt 0) {
                 try {
                     $resetAt = [DateTimeOffset]::FromUnixTimeSeconds($seconds)
-                    $reset = $resetAt.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss zzz', [Globalization.CultureInfo]::InvariantCulture)
+                    $resetFormat = if ($Minutes -eq 10080) { 'ddd d MMM h:mm tt' } else { 'ddd h:mm tt' }
+                    $reset = 'resets ' + $resetAt.ToLocalTime().ToString($resetFormat, [Globalization.CultureInfo]::CurrentCulture)
                     # A past reset is not evidence of a fresh 100% allowance.
-                    if ($resetAt -le [DateTimeOffset]::UtcNow) { $note = 'cached; reset passed; out of date' }
+                    if ($resetAt -le [DateTimeOffset]::UtcNow) {
+                        $resetPassed = $true
+                        $reset = 'reset passed; refresh required'
+                    }
                 } catch { }
             }
         }
     }
-    return "${Label}: $remaining | resets $reset ($note)"
+    $heading = $Label.PadRight(6) + '  '
+    $resetCode = if ($resetPassed) { '93' } else { '90' }
+    $suffix = '   ' + (Paint-LimitText $reset $resetCode $Color) + '   ' + (Paint-LimitText $note '90' $Color)
+    if ($null -eq $left) { return $heading + $remaining + $suffix }
+
+    # Codex fills remaining allowance; Claude fills used allowance. The label
+    # keeps this distinction explicit. Round half-cells up, matching Claude.
+    $code = if ($resetPassed) { '93' } elseif ($left -lt 20) { '91' } elseif ($left -lt 50) { '93' } else { '92' }
+    $filled = [int][Math]::Round($left / 10, [MidpointRounding]::AwayFromZero)
+    $cells = for ($index = 0; $index -lt 10; $index++) {
+        # Character codes keep the script ASCII-safe in Windows PowerShell 5.1.
+        if ($index -lt $filled) { Paint-LimitText ([string][char]0x25A0) $code $Color }
+        else { Paint-LimitText ([string][char]0x25A1) '37' $Color }
+    }
+    return $heading + (Paint-LimitText $remaining.PadLeft(10) ('1;' + $code) $Color) + '   ' + ($cells -join ' ') + $suffix
 }
 
 $snapshot = $null
 try { $snapshot = Get-SavedLimits } catch { }
-Format-LimitLine '5-hour' 300 $snapshot
-Format-LimitLine 'Weekly' 10080 $snapshot
+$color = -not [Console]::IsOutputRedirected -and ($Host.UI.SupportsVirtualTerminal -or $env:WT_SESSION) -and
+    $env:TERM -ne 'dumb' -and -not (Test-Path Env:NO_COLOR) -and -not (Test-Path Env:NODE_DISABLE_COLORS)
+Format-LimitLine '5h' 300 $snapshot $color
+Format-LimitLine 'Weekly' 10080 $snapshot $color

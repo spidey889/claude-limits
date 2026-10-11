@@ -26,9 +26,19 @@
   session contents, paths, credentials, credits, or plan details are printed or stored.
 - Windows are identified by duration: 300 minutes and 10080 minutes. Percent left is
   `max(0, 100 - used_percent)`, formatted to one decimal at most. Invalid/missing fields
-  say unavailable. Reset seconds are converted to local time with a UTC offset.
+  say unavailable and unknown percentages have no bar. Reset seconds become compact
+  local weekday/time text; weekly resets include the date.
+- Output leads with percent left, followed by ten spaced solid/hollow squares for
+  remaining/used allowance. Fill rounds to the nearest cell, with half-cells rounded
+  up. This matches Claude's layout while keeping Codex's remaining-allowance meaning.
+- On a non-redirected console supporting virtual-terminal styling (including Windows
+  Terminal), allowance is bold green from 50% left, amber below 50%, and red below
+  20%. Passed resets use amber. Hollow cells are bright neutral text; future resets
+  and cache labels are quieter gray. `NO_COLOR`, `NODE_DISABLE_COLORS`, dumb terminals,
+  and redirected output disable styling. Square glyphs use character codes so the
+  source remains compatible with Windows PowerShell 5.1 without an encoding change.
 - Exactly two lines are printed, including on absent/unreadable data. Cached limits
-  always carry a staleness note; expired resets carry an explicit out-of-date note.
+  always carry a short `cached` label; expired resets say `reset passed; refresh required`.
   Percentages are historical observations, never predictions of an allowance after reset.
 - There are no network operations or CLI invocations in the finished command. There
   is no account identity validation: after switching accounts, a cached snapshot may

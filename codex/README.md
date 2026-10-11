@@ -6,9 +6,16 @@ The independent offline Codex command in the [combined repository](../README.md)
 codexli
 ```
 
-It prints exactly two lines: saved 5-hour and weekly **percent left** and reset time. Every reading is marked **cached; may be out of date**. A past reset is explicitly flagged; missing fields say `unavailable`. The command never guesses your post-reset allowance. Use Codex normally to record a newer observation, then run it again.
+It prints exactly two lines, with saved 5-hour and weekly **percent left** first, followed by ten spaced squares and a compact reset time. Solid squares show allowance remaining; hollow squares show allowance used. Green highlights at least 50% left, amber highlights below 50%, and red highlights below 20%. Reset times and the short **cached** label stay secondary. `NO_COLOR` disables styling; redirected output is plain.
 
-It reads `~/.codex/sessions` and `~/.codex/archived_sessions`, or those folders under `CODEX_HOME`. It makes no network requests, sends no messages, invokes no Codex CLI, reads no authentication files, and writes nothing. Local reset times include their UTC offset. After account changes, a saved observation may belong to the previous account until Codex records a newer one.
+```text
+5h         5% left   ■ □ □ □ □ □ □ □ □ □   resets Sun 5:11 PM   cached
+Weekly    85% left   ■ ■ ■ ■ ■ ■ ■ ■ ■ □   resets Sun 18 Oct 12:11 PM   cached
+```
+
+Cached readings may be out of date. A past reset says `reset passed; refresh required`; missing fields say `unavailable` and unknown percentages have no bar. The command never guesses your post-reset allowance. Use Codex normally to record a newer observation, then run it again.
+
+It reads `~/.codex/sessions` and `~/.codex/archived_sessions`, or those folders under `CODEX_HOME`. It makes no network requests, sends no messages, invokes no Codex CLI, reads no authentication files, and writes nothing. Reset times use the computer's local timezone, with the weekly date included. After account changes, a saved observation may belong to the previous account until Codex records a newer one.
 
 ## Setup
 

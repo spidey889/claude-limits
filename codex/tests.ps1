@@ -48,9 +48,26 @@ try {
     # Write the older observation last: modification order must not pick its value.
     Save-Events 'sessions\older.jsonl' @($older)
     $output = Run-Limits
-    $localReset = [DateTimeOffset]::FromUnixTimeSeconds($future).ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss zzz')
-    Assert ($output[0] -eq "5-hour: 87.5% left | resets $localReset (cached; may be out of date)") ("Wrong percentage, local reset, or newest observation. Actual: " + $output[0])
-    Assert ($output[1] -like 'Weekly: 60% left | resets * (cached; may be out of date)') 'Wrong weekly allowance.'
+    $localReset = [DateTimeOffset]::FromUnixTimeSeconds($future).ToLocalTime().ToString('ddd h:mm tt')
+    $solid = [string][char]0x25A0
+    $hollow = [string][char]0x25A1
+    $remainingBar = ((@($solid) * 9) + $hollow) -join ' '
+    Assert ($output[0] -eq "5h      87.5% left   $remainingBar   resets $localReset   cached") ("Wrong percentage, remaining bar, local reset, or newest observation. Actual: " + $output[0])
+    Assert ($output[1] -like 'Weekly*60% left*resets*cached') 'Wrong weekly allowance.'
+    Assert (-not ($output -match [char]27)) 'Redirected output contains ANSI escapes.'
+
+    # Exercise terminal styling without depending on the test runner's console.
+    $null = . (Join-Path $project 'limits.ps1') -CodexHome $testRoot
+    $displaySnapshot = [pscustomobject]@{ Limits = $newer.payload.rate_limits }
+    $colored = Format-LimitLine '5h' 300 $displaySnapshot $true
+    Assert ($colored.Contains(([string][char]27 + '[1;92m87.5% left'))) 'Healthy remaining allowance is not highlighted in green.'
+    Assert (($colored -replace '\x1b\[[0-9;]+m', '') -eq $output[0]) 'Color changed the displayed values or layout.'
+    $low = New-Event $now 95
+    $lowSnapshot = [pscustomobject]@{ Limits = $low.payload.rate_limits }
+    $lowPlain = Format-LimitLine '5h' 300 $lowSnapshot
+    $lowColored = Format-LimitLine '5h' 300 $lowSnapshot $true
+    Assert ($lowPlain -like ("5h*5% left   $solid " + ((@($hollow) * 9) -join ' ') + '*')) 'Five percent left should show one solid cell, rather than appearing empty.'
+    Assert ($lowColored.Contains(([string][char]27 + '[1;91m   5% left'))) 'Low remaining allowance is not highlighted in red.'
 
     $wrongBucket = New-Event $now.AddSeconds(-10) 99 99 $future 'codex_other'
     $quoted = @{ timestamp = $now.ToString('o'); type = 'response_item'; payload = $wrongBucket.payload }
@@ -59,25 +76,25 @@ try {
     [IO.File]::AppendAllText((Join-Path $testRoot 'sessions\newer.jsonl'), '{"timestamp":"incomplete')
     $heldFile = [IO.File]::Open((Join-Path $testRoot 'sessions\newer.jsonl'), [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::Read)
     $output = Run-Limits
-    Assert ($output[0] -like '5-hour: 87.5% left*') 'Locked file, malformed trailing line, null snapshot, or non-account data displaced valid limits.'
+    Assert ($output[0] -like '5h*87.5% left*') 'Locked file, malformed trailing line, null snapshot, or non-account data displaced valid limits.'
     $heldFile.Dispose()
     $heldFile = $null
 
     $archived = New-Event $now.AddSeconds(-5) 0 10
     Save-Events 'archived_sessions\latest.jsonl' @($archived)
     $output = Run-Limits
-    Assert ($output[0] -like '5-hour: 100% left*' -and $output[1] -like 'Weekly: 90% left*') 'Newest archived observation was missed.'
+    Assert ($output[0] -like '5h*100% left*' -and $output[1] -like 'Weekly*90% left*') 'Newest archived observation was missed.'
 
     $expired = New-Event $now.AddSeconds(-4) 100 10 ($now.AddHours(-1).ToUnixTimeSeconds())
     Save-Events 'archived_sessions\latest.jsonl' @($expired)
     $output = Run-Limits
-    Assert ($output[0] -like '5-hour: 0% left* (cached; reset passed; out of date)') 'Past reset was not flagged, or fresh allowance was guessed.'
+    Assert ($output[0] -like '5h*0% left*reset passed; refresh required*cached') 'Past reset was not flagged, or fresh allowance was guessed.'
 
     $invalid = New-Event $now.AddSeconds(-3) $null 130 $null
     Save-Events 'archived_sessions\latest.jsonl' @($invalid)
     $output = Run-Limits
-    Assert ($output[0] -eq '5-hour: unavailable | resets unavailable (cached; may be out of date)') 'Missing fields became fabricated percentages or reset times.'
-    Assert ($output[1] -like 'Weekly: 0% left*') 'Over-limit usage produced a negative allowance.'
+    Assert ($output[0] -eq '5h      unavailable   reset unavailable   cached') 'Missing fields became fabricated percentages or reset times.'
+    Assert ($output[1] -like 'Weekly*0% left*') 'Over-limit usage produced a negative allowance.'
 
     $swapped = New-Event $now.AddSeconds(-2) 25 50
     $swapped.payload.rate_limits.Remove('limit_id')
@@ -86,23 +103,23 @@ try {
     $swapped.payload.rate_limits.secondary = $primary
     Save-Events 'archived_sessions\latest.jsonl' @($swapped)
     $output = Run-Limits
-    Assert ($output[0] -like '5-hour: 75% left*' -and $output[1] -like 'Weekly: 50% left*') 'Legacy bucket IDs or reversed window positions are unsupported.'
+    Assert ($output[0] -like '5h*75% left*' -and $output[1] -like 'Weekly*50% left*') 'Legacy bucket IDs or reversed window positions are unsupported.'
 
     $swapped.payload.rate_limits.primary = $null
     Save-Events 'archived_sessions\latest.jsonl' @($swapped)
     $output = Run-Limits
-    Assert ($output[1] -like 'Weekly: unavailable | resets unavailable*') 'Missing latest window was backfilled from an older snapshot.'
+    Assert ($output[1] -like 'Weekly  unavailable   reset unavailable*') 'Missing latest window was backfilled from an older snapshot.'
 
     $env:Path = $project + ';' + $env:Path
     $env:CODEX_HOME = $testRoot
     Push-Location $env:USERPROFILE
     try { $output = @(codexli 2>&1) } finally { Pop-Location }
-    Assert ($output.Count -eq 2 -and $output[0] -like '5-hour: 75% left*') 'Bare command failed from another folder or ignored CODEX_HOME.'
+    Assert ($output.Count -eq 2 -and $output[0] -like '5h*75% left*') 'Bare command failed from another folder or ignored CODEX_HOME.'
 
     foreach ($missingRoot in @((Join-Path $testRoot 'absent'), '\\127.0.0.1\never-contact-this-share')) {
         $output = @(& (Join-Path $project 'codexli.cmd') -CodexHome $missingRoot 2>&1)
-        Assert ($output.Count -eq 2 -and $output[0] -eq '5-hour: unavailable | resets unavailable (no local rate-limit data)' -and
-            $output[1] -eq 'Weekly: unavailable | resets unavailable (no local rate-limit data)') 'Missing or non-local data emitted extra output.'
+        Assert ($output.Count -eq 2 -and $output[0] -eq '5h      unavailable   reset unavailable   no local data' -and
+            $output[1] -eq 'Weekly  unavailable   reset unavailable   no local data') 'Missing or non-local data emitted extra output.'
     }
     # Exercise migration without writing the owner's registry PATH.
     $previousFolder = Join-Path $testRoot 'old-codex-limits'
