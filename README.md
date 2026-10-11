@@ -24,7 +24,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Tool Claude
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Tool Codex
 ```
 
-For a new Claude-only install with automatic connection, **open Claude Desktop and sign in first**, then paste this block into PowerShell. It downloads the project, installs `claudeli`, quits Claude briefly, connects, and reopens Claude even if connection fails:
+For a new Claude-only install, **sign in to Claude Desktop first**, then paste this block into PowerShell. Desktop can stay open. The command connects automatically, briefly quitting and reopening Desktop only if its login database is locked:
 
 ```powershell
 & {
@@ -34,31 +34,17 @@ For a new Claude-only install with automatic connection, **open Claude Desktop a
     Set-Location .\claude-limits
     powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Tool Claude
     if ($LASTEXITCODE -ne 0) { return }
-    $claudeSessionId = (Get-Process -Id $PID).SessionId
-    $claudeProcesses = @(Get-Process -Name Claude -ErrorAction SilentlyContinue |
-        Where-Object { $_.SessionId -eq $claudeSessionId -and $_.Path })
-    if (-not $claudeProcesses.Count) {
-        Write-Host 'Open Claude Desktop and sign in, then rerun the connection steps.'
-        return
-    }
-    $claudeAppPath = $claudeProcesses[0].Path
-    try {
-        $claudeProcesses | Where-Object { $_.Path -eq $claudeAppPath } | Stop-Process -ErrorAction Stop
-        Start-Sleep -Milliseconds 700
-        & "$env:USERPROFILE\.local\bin\claudeli.cmd" --connect
-    } finally {
-        Start-Process -FilePath $claudeAppPath
-    }
+    & "$env:USERPROFILE\.local\bin\claudeli.cmd" --connect
 }
 ```
 
-To reconnect after a restart, quit Desktop from its tray menu, run `claudeli --connect`, then reopen Desktop. Reopen PowerShell after setup, then run `claudeli`. Your signed-in Desktop session must already exist; setup cannot sign you in.
+Reopen PowerShell after setup, then run `claudeli`. It reconnects automatically after a Windows restart. Your signed-in Desktop session must already exist; setup cannot sign you in.
 
 Claude requires Node.js 22.13+ with `node:sqlite`. If Node is missing, too old, or lacks SQLite support, the installer explains what to install and asks you to reopen PowerShell and run it again; it stops before changing the launcher or PATH. Codex requires only Windows PowerShell 5.1; it has no Node or CLI dependency. Reopen PowerShell after installation to receive the updated user PATH. The Codex installer replaces the old `%USERPROFILE%\Desktop\codex-limits` PATH entry with this repository's `codex` folder and removes recognized old `codex-limits.cmd` launchers. Unrelated PATH entries and the remaining original source files are preserved.
 
 ## Claude
 
-Quit Claude Desktop from its tray menu once and run `claudeli --connect`, then reopen Desktop. The helper keeps your login session in memory until it stops or Windows restarts. Reconnect after signing in again or switching accounts.
+Run `claudeli` with Desktop open or closed. If the helper needs to reconnect and Desktop locks the login database, it briefly quits and reopens the signed Claude app automatically. Normal checks leave Desktop running. The helper keeps your login session in memory until it stops or Windows restarts. After switching accounts, run `claudeli --stop`, then `claudeli` to connect to the new account.
 
 ```powershell
 claudeli

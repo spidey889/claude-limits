@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-12
+
+- Moved Desktop reconnection into `claudeli` so cold starts and Windows restarts no longer require manually quitting from the tray. A locked session briefly closes and reopens the signed Anthropic app in the current Windows session; a running helper leaves Desktop untouched. Credentials stay in Node memory.
+- Added an operating-system startup guard for concurrent commands, bounded local file-lock retries, and cleanup that reopens Desktop after connection errors or parent exit. Recovery refuses unexpected signatures or ambiguous executable paths.
+- Simplified the download/setup block to use the same automatic connection path and updated command help and installer guidance.
+- The first live check exposed Windows PowerShell failing to import its signature module through an inherited PowerShell 7 module path. Restricted the recovery child's module search to its own built-ins; no host environment or security settings are changed.
+- Validation: all 66 Claude tests passed. The installed command automatically reconnected with Desktop open, reopened the app, and returned a fresh 32% five-hour / 10% weekly reading at 1:39:57 AM. A subsequent `--connect` reused the helper in 0.26 seconds with identical Desktop process IDs; this measured connection only, not quota-fetch latency.
+
 ## 2026-10-11
 
 - Fixed quota display after reaching Claude's limit. The live completion returned HTTP 429 with `message_limit_exceeded` and fresh windows: 99% for the rejected five-hour window, 4% weekly. The client previously discarded that body. It now extracts only bounded, confirmed quota metadata, preserves the reported percentage, and shows `LIMIT REACHED` on explicitly exceeded windows.

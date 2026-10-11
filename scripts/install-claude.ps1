@@ -27,4 +27,4 @@ if (($claudeUserPath -split ';') -notcontains $claudeBin) {
     [Environment]::SetEnvironmentVariable('Path', ($claudeUserPath.TrimEnd(';') + ';' + $claudeBin), 'User')
 }
 if (($env:Path -split ';') -notcontains $claudeBin) { $env:Path += ';' + $claudeBin }
-Write-Output 'Installed claudeli. Quit Claude Desktop once, then run claudeli --connect.'
+Write-Output 'Installed claudeli. Sign in to Claude Desktop, then run claudeli; it connects automatically.'

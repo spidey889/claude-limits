@@ -5,7 +5,8 @@ const net = require('node:net');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
-const { readDesktopSession } = require('./session.cjs');
+const { readAutomaticSession } = require('./automatic-session.cjs');
+const { withStartupLock } = require('./startup-lock.cjs');
 const { formatUsage } = require('./usage.cjs');
 const runtime = require('./runtime.cjs');
 
@@ -37,24 +38,32 @@ async function connect(action = 'read') {
     catch (error) { if (!['ENOENT', 'ECONNREFUSED'].includes(error.code)) throw error; }
   }
   if (action === 'stop') return null;
-  const session = readDesktopSession();
-  token ??= crypto.randomBytes(32).toString('hex');
-  if (!/^[a-f0-9]{64}$/.test(token)) throw new Error('Invalid local service token file.');
-  fs.writeFileSync(runtime.keyPath, token + '\n', { mode: 0o600 });
-  const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, 'service.cjs')], {
-    cwd: __dirname, detached: true, windowsHide: true, stdio: ['pipe', 'ignore', 'ignore'],
+  return withStartupLock(async () => {
+    // Another invocation may have started the helper while this command waited.
+    try { token = fs.readFileSync(runtime.keyPath, 'utf8').trim(); } catch {}
+    if (token) {
+      try { await talk('ping', token); return token; }
+      catch (error) { if (!['ENOENT', 'ECONNREFUSED'].includes(error.code)) throw error; }
+    }
+    token ??= crypto.randomBytes(32).toString('hex');
+    if (!/^[a-f0-9]{64}$/.test(token)) throw new Error('Invalid local service token file.');
+    const session = await readAutomaticSession();
+    fs.writeFileSync(runtime.keyPath, token + '\n', { mode: 0o600 });
+    const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(__dirname, 'service.cjs')], {
+      cwd: __dirname, detached: true, windowsHide: true, stdio: ['pipe', 'ignore', 'ignore'],
+    });
+    child.on('error', () => {});
+    await new Promise((resolve, reject) => {
+      child.stdin.on('error', reject);
+      child.stdin.end(JSON.stringify({ session, token }), resolve);
+    });
+    child.unref();
+    for (let attempt = 0; attempt < 40; attempt++) {
+      try { await talk('ping', token); return token; } catch {}
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    throw new Error('Could not start the local Claude session service.');
   });
-  child.on('error', () => {});
-  await new Promise((resolve, reject) => {
-    child.stdin.on('error', reject);
-    child.stdin.end(JSON.stringify({ session, token }), resolve);
-  });
-  child.unref();
-  for (let attempt = 0; attempt < 40; attempt++) {
-    try { await talk('ping', token); return token; } catch {}
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-  throw new Error('Could not start the local Claude session service.');
 }
 
 async function main() {
@@ -63,7 +72,7 @@ async function main() {
     throw new Error('Use claudeli, claudeli --watch, claudeli --connect, or claudeli --stop.');
   }
   if (args.includes('--help')) {
-    console.log('claudeli          Fetch real 5-hour and weekly usage\nclaudeli --watch  Refresh every 5 minutes; Ctrl+C stops watching\nclaudeli --connect  Connect once while Claude Desktop is quit\nclaudeli --stop   Forget the in-memory Desktop session\n\nOn free plans, fresh readings use one tiny temporary test message.');
+    console.log('claudeli          Fetch real 5-hour and weekly usage\nclaudeli --watch  Refresh every 5 minutes; Ctrl+C stops watching\nclaudeli --connect  Connect automatically to your Desktop session\nclaudeli --stop   Forget the in-memory Desktop session\n\nOn free plans, fresh readings use one tiny temporary test message.');
     return;
   }
   const action = args.includes('--stop') ? 'stop' : args.includes('--connect') ? 'ping' : 'read';
@@ -72,7 +81,7 @@ async function main() {
     if (token) await talk('stop', token);
     console.log('Claude session disconnected.'); return;
   }
-  if (action === 'ping') { console.log('Connected. You can reopen Claude Desktop.'); return; }
+  if (action === 'ping') { console.log('Connected.'); return; }
   const watch = args.includes('--watch');
   const color = Boolean(process.stdout.isTTY && !('NO_COLOR' in process.env) && process.stdout.hasColors());
   if (watch) console.log('Refreshes every 5 minutes. Free-plan refreshes use a tiny test message. Ctrl+C stops.');

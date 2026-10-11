@@ -17,6 +17,7 @@ function readDesktopSession() {
   if (process.platform !== 'win32') throw new Error('Claude Limits currently supports Windows.');
   const { DatabaseSync } = require('node:sqlite');
   const root = path.join(process.env.APPDATA, 'Claude');
+  if (!fs.existsSync(path.join(root, 'Network', 'Cookies'))) throw new Error('Sign in to Claude Desktop first.');
   const state = JSON.parse(fs.readFileSync(path.join(root, 'Local State'), 'utf8'));
   const wrapped = Buffer.from(state.os_crypt.encrypted_key, 'base64');
   if (wrapped.subarray(0, 5).toString() !== 'DPAPI') throw new Error('Unsupported Desktop session encryption.');
@@ -24,7 +25,7 @@ function readDesktopSession() {
   let db;
   try {
     try { db = new DatabaseSync(path.join(root, 'Network', 'Cookies'), { readOnly: true }); }
-    catch { throw new Error('Quit Claude Desktop from its tray menu, then run claudeli again.'); }
+    catch { throw Object.assign(new Error('The Claude Desktop session database is locked.'), { code: 'CLAUDE_SESSION_LOCKED' }); }
     const rows = db.prepare("SELECT name, host_key, value, encrypted_value FROM cookies WHERE host_key IN ('claude.ai','.claude.ai')").all();
     const cookies = {};
     for (const row of rows) {
